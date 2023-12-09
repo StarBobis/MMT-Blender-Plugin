@@ -23,18 +23,21 @@ bl_info = {
     "author": "NicoMico",
     "description": "Blender plugin for NMBT.",
     "blender": (4, 0, 0),
+    "version": (1, 0),
     "location": "View3D",
     "warning": "",
     "category": "Generic"
 }
 
-from bpy_extras.io_utils import orientation_helper
 
+# TODO Strange design again, wtf is this?
+from bpy_extras.io_utils import orientation_helper
 IOOBJOrientationHelper = type('DummyIOOBJOrientationHelper', (object,), {})
 
+# Constants
 vertex_color_layer_channels = 4
 
-
+# TODO we don't need any old version compatible, remove these in later version.
 def set_active_object(context, obj):
     context.view_layer.objects.active = obj  # the 2.8 way
 
@@ -63,10 +66,17 @@ def keys_to_strings(d):
     return {str(k): v for k, v in d.items()}
 
 
-class Fatal(Exception): pass
+# TODO why use a null Exception? remove this in later version.
+class Fatal(Exception):
+    pass
 
 
-# TODO: Support more DXGI formats:
+'''
+DXGI Formats 
+TODO it's not enough to use in game modding area,
+  and this format is extremely hard to read, python is for human,
+  so why use this unreadable format ?
+'''
 f32_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]32)+_FLOAT''')
 f16_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]16)+_FLOAT''')
 u32_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]32)+_UINT''')
@@ -84,6 +94,7 @@ misc_float_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD][0-9]+)+_(?:FLOAT
 misc_int_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD][0-9]+)+_[SU]INT''')
 
 
+# TODO strange design and hard to read and understand for mod author, make this easier and more readable later.
 def EncoderDecoder(fmt):
     if f32_pattern.match(fmt):
         return (lambda data: b''.join(struct.pack('<f', x) for x in data),
@@ -128,6 +139,7 @@ def EncoderDecoder(fmt):
     raise Fatal('File uses an unsupported DXGI Format: %s' % fmt)
 
 
+# TODO strange design again ,why don't use a class to wrap all encode and decode??
 components_pattern = re.compile(r'''(?<![0-9])[0-9]+(?![0-9])''')
 
 
@@ -140,6 +152,12 @@ def format_size(fmt):
     return sum(map(int, matches)) // 8
 
 
+# TODO why the parameter is an object type instead of bpy.types.Operator or specific type??
+'''
+This class seems used to parse -ib and -vb0.txt
+but it's really hard to understand, why use strange feature in python?
+we use python is because it's easy, don't make it hard to understand.
+'''
 class InputLayoutElement(object):
     def __init__(self, arg):
         if isinstance(arg, io.IOBase):
@@ -1874,9 +1892,6 @@ register_classes = (
     DeleteNonNumericVertexGroups,
 )
 
-import_menu = bpy.types.TOPBAR_MT_file_import
-export_menu = bpy.types.TOPBAR_MT_file_export
-
 # https://theduckcow.com/2019/update-addons-both-blender-28-and-27-support/
 def make_annotations(cls):
     """Converts class fields to annotations"""
@@ -1896,21 +1911,21 @@ def register():
         make_annotations(cls)
         bpy.utils.register_class(cls)
 
-    import_menu.append(menu_func_import_fa)
-    import_menu.append(menu_func_import_raw)
-    export_menu.append(menu_func_export)
-    import_menu.append(menu_func_apply_vgmap)
-    import_menu.append(menu_func_import_pose)
+    bpy.types.TOPBAR_MT_file_import.append(menu_func_import_fa)
+    bpy.types.TOPBAR_MT_file_import.append(menu_func_import_raw)
+    bpy.types.TOPBAR_MT_file_import.append(menu_func_apply_vgmap)
+    bpy.types.TOPBAR_MT_file_import.append(menu_func_import_pose)
+    bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
 
 
 def unregister():
     for cls in reversed(register_classes):
         bpy.utils.unregister_class(cls)
 
-    import_menu.remove(menu_func_import_fa)
-    import_menu.remove(menu_func_import_raw)
-    export_menu.remove(menu_func_export)
-    import_menu.remove(menu_func_apply_vgmap)
-    import_menu.remove(menu_func_import_pose)
+    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_fa)
+    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_raw)
+    bpy.types.TOPBAR_MT_file_import.remove(menu_func_apply_vgmap)
+    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_pose)
+    bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
 
 
