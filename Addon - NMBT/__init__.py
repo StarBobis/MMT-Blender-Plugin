@@ -28,15 +28,11 @@ bl_info = {
     "category": "Generic"
 }
 
-
-############## Begin (deprecated) Blender 2.7/2.8 compatibility wrappers (2.7 options removed) ##############
-
 from bpy_extras.io_utils import orientation_helper
 
 IOOBJOrientationHelper = type('DummyIOOBJOrientationHelper', (object,), {})
 
 vertex_color_layer_channels = 4
-
 
 
 def set_active_object(context, obj):
@@ -53,9 +49,6 @@ def link_object_to_scene(context, obj):
 
 def unlink_object(context, obj):
     context.scene.collection.objects.unlink(obj)
-
-
-
 
 
 def matmul(a, b):

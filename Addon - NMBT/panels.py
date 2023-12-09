@@ -1,0 +1,1 @@
+# panels.py - 包含定义UI面板的类，通常这些类都会继承自bpy.types.Panel。

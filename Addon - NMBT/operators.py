@@ -1,0 +1,1 @@
+# operators.py - 包含插件中所有的操作（Operators），即用户通过UI触发的动作。每个操作通常都继承自bpy.types.Operator。
