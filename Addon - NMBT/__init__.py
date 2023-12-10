@@ -66,7 +66,7 @@ def keys_to_strings(d):
     return {str(k): v for k, v in d.items()}
 
 
-# TODO why use a null Exception? remove this in later version.
+# This is used to catch any exception in run time and raise it to blender output console.
 class Fatal(Exception):
     pass
 
@@ -153,12 +153,12 @@ def format_size(fmt):
 
 
 # TODO why the parameter is an object type instead of bpy.types.Operator or specific type??
-'''
-This class seems used to parse -ib and -vb0.txt
-but it's really hard to understand, why use strange feature in python?
-we use python is because it's easy, don't make it hard to understand.
-'''
 class InputLayoutElement(object):
+    '''
+    This class seems used to parse -ib and -vb0.txt
+    but it's really hard to understand, why use strange feature in python?
+    we use python is because it's easy, don't make it hard to understand.
+    '''
     def __init__(self, arg):
         if isinstance(arg, io.IOBase):
             self.from_file(arg)
@@ -317,6 +317,8 @@ class InputLayout(object):
         return self.elems == other.elems
 
 
+# TODO this is a crazy design, why you need a Hashable dict?
+#  why don't use a class to desing a new data structure so it will be more readable?
 class HashableVertex(dict):
     def __hash__(self):
         # Convert keys and values into immutable types that can be hashed
@@ -631,6 +633,9 @@ def import_normals_step1(mesh, data):
 
     # Nico: 这里normal的第四个值如果不是0.0，那就直接报错
     if len(data[0]) == 4:
+        # TODO why use List Comprehension here? it's really hard to read.
+        # TODO Blender不支持4D normal，而UE4 Normal的的第四个分量一般情况下是1，可以忽略后导入
+        #  而BINORMAL第四个分量不是1就是-1，这时第四个分量代表手性信息，需要根据是否为-1进行向量翻转。
         if [x[3] for x in data] != [0.0] * len(data):
             raise Fatal('Normals are 4D')
     normals = [(x[0], x[1], x[2]) for x in data]
@@ -727,6 +732,7 @@ def import_uv_layers(mesh, obj, texcoords, flip_texcoord_v):
 
             # Can't find an easy way to flip the display of V in Blender, so
             # add an option to flip it on import & export:
+            # TODO why use lambda? it's hard to understand.
             if flip_texcoord_v:
                 flip_uv = lambda uv: (uv[0], 1.0 - uv[1])
                 # Record that V was flipped so we know to undo it when exporting:
@@ -734,7 +740,9 @@ def import_uv_layers(mesh, obj, texcoords, flip_texcoord_v):
             else:
                 flip_uv = lambda uv: uv
 
+            # TODO WTF? why merge them in one line, too hard to understand.
             uvs = [[d[cmap[c]] for c in components] for d in data]
+
             for l in mesh.loops:
                 blender_uvs.data[l.index].uv = flip_uv(uvs[l.vertex_index])
 
@@ -1420,6 +1428,7 @@ class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper
         return {'FINISHED'}
 
 
+# used to import .fmt file.
 class Import3DMigotoReferenceInputFormat(bpy.types.Operator, ImportHelper):
     bl_idname = "import_mesh.migoto_input_format"
     bl_label = "Select a .txt file with matching format"
@@ -1467,12 +1476,15 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
     bl_idname = "export_mesh.migoto"
     bl_label = "Export 3DMigoto Vertex & Index Buffers"
 
+    # file extension
     filename_ext = '.vb'
+    # file type filter
     filter_glob: StringProperty(
         default='*.vb',
         options={'HIDDEN'},
     )
 
+    # where you do export logic
     def execute(self, context):
         try:
             vb_path = self.filepath
@@ -1550,6 +1562,7 @@ def update_vgmap(operator, context, vg_step=1):
             obj[suffix] = vgmap
 
 
+# TODO what is .vgmap file?
 class ApplyVGMap(bpy.types.Operator, ImportHelper):
     """Apply vertex group map to the selected object"""
     bl_idname = "mesh.migoto_vertex_group_map"
@@ -1701,7 +1714,7 @@ def import_pose(operator, context, filepath=None, limit_bones_to_vertex_groups=T
 
         arm.hide_set(True)
 
-
+# TODO I have never use this in game modding and never know how to use it ,should we remove it?
 @orientation_helper(axis_forward='-Z', axis_up='Y')
 class Import3DMigotoPose(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
     """Import a pose from a 3DMigoto constant buffer dump"""
@@ -1745,6 +1758,7 @@ class Import3DMigotoPose(bpy.types.Operator, ImportHelper, IOOBJOrientationHelpe
         return {'FINISHED'}
 
 
+# TODO used in a no used function.
 def find_armature(obj):
     if obj is None:
         return None
@@ -1753,6 +1767,7 @@ def find_armature(obj):
     return obj.find_armature()
 
 
+# TODO used in a no used function.
 def copy_bone_to_target_skeleton(context, target_arm, new_name, src_bone):
     is_hidden = target_arm.hide_get()
     is_selected = target_arm.select_get()
@@ -1775,6 +1790,7 @@ def copy_bone_to_target_skeleton(context, target_arm, new_name, src_bone):
     target_arm.hide_set(is_hidden)
 
 
+# TODO this seems no functions use, used in a no used function.
 def merge_armatures(operator, context):
     target_arm = find_armature(context.object)
     if target_arm is None:
@@ -1831,6 +1847,7 @@ def merge_armatures(operator, context):
         unlink_object(context, src_arm)
 
 
+# TODO Why no function use this class? should we delete it lator?
 class Merge3DMigotoPose(bpy.types.Operator):
     """Merge identically posed bones of related armatures into one"""
     bl_idname = "armature.merge_pose"
@@ -1845,6 +1862,7 @@ class Merge3DMigotoPose(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# TODO Why no function use this class? should we delete it lator?
 class DeleteNonNumericVertexGroups(bpy.types.Operator):
     """Remove vertex groups with non-numeric names"""
     bl_idname = "vertex_groups.delete_non_numeric"
@@ -1865,16 +1883,20 @@ class DeleteNonNumericVertexGroups(bpy.types.Operator):
 
 
 def menu_func_import_fa(self, context):
-    self.layout.operator(Import3DMigotoFrameAnalysis.bl_idname, text="3DMigoto frame analysis dump (vb.txt + ib.txt)")
+    self.layout.operator(Import3DMigotoFrameAnalysis.bl_idname, text="3DMigoto FrameAnalysis dump (ib.txt + vb0.txt)")
+
 
 def menu_func_import_raw(self, context):
     self.layout.operator(Import3DMigotoRaw.bl_idname, text="3DMigoto raw buffers (.vb + .ib)")
 
+
 def menu_func_import_pose(self, context):
     self.layout.operator(Import3DMigotoPose.bl_idname, text="3DMigoto pose (.txt)")
 
+
 def menu_func_export(self, context):
     self.layout.operator(Export3DMigoto.bl_idname, text="3DMigoto raw buffers (.vb + .ib)")
+
 
 def menu_func_apply_vgmap(self, context):
     self.layout.operator(ApplyVGMap.bl_idname, text="Apply 3DMigoto vertex group map to current object (.vgmap)")
@@ -1892,6 +1914,7 @@ register_classes = (
     DeleteNonNumericVertexGroups,
 )
 
+# TODO we don't need any version compatible, remove this later.
 # https://theduckcow.com/2019/update-addons-both-blender-28-and-27-support/
 def make_annotations(cls):
     """Converts class fields to annotations"""

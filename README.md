@@ -8,8 +8,8 @@ This project use GNU3 as main LICENSE,and MPL-2.0 as backup, you can use one of 
 
 # Develop Environment
 - OS: Windows 11 Pro
-- IDE: Pycharm
-- Pycharm plugin: Pycharm-Blender-Plugin(https://github.com/BlackStartx/PyCharm-Blender-Plugin)
+- IDE: Pycharm Community 2023.3
+- Pycharm plugin: Pycharm-Blender-Plugin(https://github.com/BlackStartx/PyCharm-Blender-Plugin) 2023.3
 - Blender Version: 4.0
 
 Extra modules: 
