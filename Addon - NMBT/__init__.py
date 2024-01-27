@@ -21,9 +21,9 @@ from mathutils import Matrix, Vector
 bl_info = {
     "name": "NMBT",
     "author": "NicoMico",
-    "description": "Blender plugin for NMBT.",
-    "blender": (3, 6, 0),
-    "version": (1, 0),
+    "description": "Special version blender plugin for 3Dmigoto Mod.",
+    "blender": (4, 0, 0),
+    "version": (1, 1),
     "location": "View3D",
     "warning": "",
     "category": "Generic"
@@ -72,10 +72,7 @@ class Fatal(Exception):
 
 
 '''
-DXGI Formats 
-TODO it's not enough to use in game modding area,
-  and this format is extremely hard to read, python is for human,
-  so why use this unreadable format ?
+DXGI Formats but why use this unreadable format ?
 '''
 f32_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]32)+_FLOAT''')
 f16_pattern = re.compile(r'''(?:DXGI_FORMAT_)?(?:[RGBAD]16)+_FLOAT''')
@@ -760,8 +757,8 @@ def import_vertex_layers(mesh, obj, vertex_layers):
                 layer_name = element_name
 
             if type(data[0][0]) == int:
-                mesh.vertex_layers_int.new(name=layer_name)
-                layer = mesh.vertex_layers_int[layer_name]
+                layer = mesh.vertex_layers.new(name=layer_name, type='INT')
+
                 for v in mesh.vertices:
                     val = data[v.index][component]
                     # Blender integer layers are 32bit signed and will throw an
@@ -772,8 +769,7 @@ def import_vertex_layers(mesh, obj, vertex_layers):
                     else:
                         layer.data[v.index].value = struct.unpack('i', struct.pack('I', val))[0]
             elif type(data[0][0]) == float:
-                mesh.vertex_layers_float.new(name=layer_name)
-                layer = mesh.vertex_layers_float[layer_name]
+                layer = mesh.vertex_layers.new(name=layer_name, type='FLOAT')
                 for v in mesh.vertices:
                     layer.data[v.index].value = data[v.index][component]
             else:
@@ -889,7 +885,7 @@ def import_vertices(mesh, vb):
     return (blend_indices, blend_weights, texcoords, vertex_layers, use_normals)
 
 
-def import_3dmigoto(operator, context, paths, merge_meshes=True, **kwargs):
+def import_3dmigoto(operator, context, paths, merge_meshes=False, **kwargs):
     if merge_meshes:
         return import_3dmigoto_vb_ib(operator, context, paths, **kwargs)
     else:
@@ -987,13 +983,7 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
         seen_offsets.add((elem.InputSlot, elem.AlignedByteOffset))
 
         if elem.name == 'POSITION':
-            # TODO Can't find mesh.vertex_layers_float in blender 4.0
-            if 'POSITION.w' in mesh.vertex_layers_float:
-                vertex[elem.name] = list(blender_vertex.undeformed_co) + \
-                                    [mesh.vertex_layers_float['POSITION.w'].data[
-                                         blender_loop_vertex.vertex_index].value]
-            else:
-                vertex[elem.name] = elem.pad(list(blender_vertex.undeformed_co), 1.0)
+            vertex[elem.name] = elem.pad(list(blender_vertex.undeformed_co), 1.0)
         elif elem.name.startswith('COLOR'):
             if elem.name in mesh.vertex_colors:
                 vertex[elem.name] = elem.clip(list(mesh.vertex_colors[elem.name].data[blender_loop_vertex.index].color))
@@ -1247,7 +1237,7 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
                 raise Fatal(
                     'Unable to find corresponding buffers from filename - ensure you are loading a dump from a timestamped Frame Analysis directory (not a deduped directory)')
 
-            use_bin = self.load_buf
+            use_bin = False
             if not match.group('hash') and not use_bin:
                 self.report({'INFO'},
                             'Filename did not contain hash - if Frame Analysis dumped a custom resource the .txt file may be incomplete, Using .buf files instead')
@@ -1271,12 +1261,12 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
                     use_bin = False
 
             pose_path = None
-            if self.pose_cb:
-                pose_pattern = filename[:match.start()] + '*-' + self.pose_cb + '=*.txt'
-                try:
-                    pose_path = glob(os.path.join(dirname, pose_pattern))[0]
-                except IndexError:
-                    pass
+            # if self.pose_cb:
+            #     pose_pattern = filename[:match.start()] + '*-' + self.pose_cb + '=*.txt'
+            #     try:
+            #         pose_path = glob(os.path.join(dirname, pose_pattern))[0]
+            #     except IndexError:
+            #         pass
 
             if len(ib_paths) != 1 or len(vb_paths) != 1:
                 raise Fatal(
@@ -1285,13 +1275,13 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
         return ret
 
     def execute(self, context):
-        if self.load_buf:
-            # Is there a way to have the mutual exclusivity reflected in
-            # the UI? Grey out options or use radio buttons or whatever?
-            if self.merge_meshes or self.load_related:
-                self.report({'INFO'}, 'Loading .buf files selected: Disabled incompatible options')
-            self.merge_meshes = False
-            self.load_related = False
+        # if self.load_buf:
+        #     # Is there a way to have the mutual exclusivity reflected in
+        #     # the UI? Grey out options or use radio buttons or whatever?
+        #     if self.merge_meshes or self.load_related:
+        #         self.report({'INFO'}, 'Loading .buf files selected: Disabled incompatible options')
+        #     self.merge_meshes = False
+        #     self.load_related = False
 
         try:
             keywords = self.as_keywords(
