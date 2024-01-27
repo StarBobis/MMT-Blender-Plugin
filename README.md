@@ -1,6 +1,3 @@
-# Open source is a kind of sin
-No one will thanks you for open source these scripts, they just use your scripts and at the same time verbally attacking you,when i open source reverse scripts seems everyone want to insult me to show their fake ethical, so my project will never be open source again, may be some compiled exe will be published here but never source code again.
-
 # NMBT-Blender
 Blender plugin for NMBT.
 
@@ -16,7 +13,7 @@ This project use GNU3 as main LICENSE,and MPL-2.0 as backup, you can use one of 
 - Blender Version: 4.0
 
 Extra modules: 
-- Fake bpy: https://github.com/nutti/fake-bpy-module (pip install fake-bpy-module-4.0)
+- Fake bpy: https://github.com/nutti/fake-bpy-module (pip install fake-bpy-module-4.0 or pip install fake-bpy-module-3.6)
 - Numpy: pip install numpy
 
 # Acknowledgements

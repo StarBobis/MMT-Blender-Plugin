@@ -22,7 +22,7 @@ bl_info = {
     "name": "NMBT",
     "author": "NicoMico",
     "description": "Blender plugin for NMBT.",
-    "blender": (4, 0, 0),
+    "blender": (3, 6, 0),
     "version": (1, 0),
     "location": "View3D",
     "warning": "",
@@ -950,11 +950,11 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     obj.select_set(True)
     set_active_object(context, obj)
 
-    if pose_path is not None:
-        import_pose(operator, context, pose_path, limit_bones_to_vertex_groups=True,
-                    axis_forward=axis_forward, axis_up=axis_up,
-                    pose_cb_off=pose_cb_off, pose_cb_step=pose_cb_step)
-        set_active_object(context, obj)
+    # if pose_path is not None:
+    #     import_pose(operator, context, pose_path, limit_bones_to_vertex_groups=True,
+    #                 axis_forward=axis_forward, axis_up=axis_up,
+    #                 pose_cb_off=pose_cb_off, pose_cb_step=pose_cb_step)
+    #     set_active_object(context, obj)
 
     return obj
 
@@ -1090,59 +1090,12 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
         ib = IndexBuffer(ib_format)
 
     '''
-    Unity进行法线Normal的计算分为:
-    - Unweighted Legacy旧式不加权计算, 使用unity 2017.1及以前版本的计算方法，
-    若某些Prefab从之前的旧版本（2017.1及以前）中迁移到新版本，可使用旧的计算方法尽量保证与迁移之前法线效果一致（但某些情况会有偏差）
-    - Unweighted不加权的法线计算
-    - Area Weighted依照模型每个网格面的面积加权
-    - Angle Weighted依照每个面上的顶角加权
-    - Area and Angle Weighted 面积加权+角度加权（默认选项）
-
-    而Blender计算的Normal一旦与Unity计算Normal的方式不同，便会导致非常明显的Normal变化
-    所以需要对每个游戏，单独确定其使用的具体Normal和Tangent算法，
-    随后，在3Dmigoto-Wheel中，或者在blender插件导出时便进行对应的计算，
-    以得到正确的DirectX11所需要的Normal和Tangent值。
-
-    而且，Unity在导入模型时，会进行如下选项的选择
-    - Normals 
-    - Normals Mode
-    - Smoothness Source
-    - Smoothing Angle
-    - Tangents
-    这些选项每一个都会影响到模型表面的光影效果，要使用3Dmigoto的方式准确的替换D3D11的值，就必须精确的知道每个游戏中使用的设置。
-    甚至这个设置必须精确到游戏中每一种类型的物体，因为每种物体都可能使用不一样的计算方式。
-    到这里可以看出，想计算出原始的D3D11所需的值，其难度相当之大，基本需要逆向整个游戏。
-
-    下面列举可能的实现方法：
-    1.逆向游戏，确定要修改的部位所使用的这些对应的设置
-    2.在3Dmigoto-Wheel或Blender插件或使用Unity本身来得到模型的真实提交到D3D11的Normal和Tangent数值
-    （不论是哪种方法，其复杂程度都不是能够简单解决的）
-
-    更何况有些游戏的引擎用到了BINORMAL和BITANGENT属性
     BINORMAL问题前辈解决了一部分，可以参考，以及里面解决了Normal is 4D 的问题：
     https://www.loverslab.com/topic/136961-bullet-girl-phantasia-mods/page/16/
-
-    TANGENT计算(但是没什么用，因为涉及的不仅仅是TANGENT)
-    https://bgolus.medium.com/generating-perfect-normal-maps-for-unity-f929e673fc57
-
-    以及Normal的计算是否是D3D11所需的左手坐标系
-    https://stackoverflow.com/questions/16986017/how-do-i-make-blender-operate-in-left-hand
-
     '''
 
     # Calculates tangents and makes loop normals valid (still with our
     # custom normal data from import time):
-    # Nico: TODO 这里使用了Blender自带的TANGENT计算方法
-    """
-    DirectX 11 中的切线向量的计算方式可能与 Blender 中的计算方式有所不同。在 DirectX 11 中,切线向量通常与切线空间 tangent space 相关联 
-    用于在渲染过程中对法线贴图进行正确的变换和插值。
-    区别可能出现在以下几个方面：
-    坐标空间 Blender 中的切线向量可能是在纹理坐标空间或对象空间计算的，而 DirectX 11 中的切线向量通常是在切线空间计算的。
-    切线空间的定义 Blender 和 DirectX 11 可能使用不同的定义来确定切线空间的方向和正负性。
-    符号约定 DirectX 11 中的切线向量可能需要遵循特定的符号约定，以确保正确的法线贴图变换和插值。
-    因此，如果你想在 Blender 中计算与 DirectX 11 兼容的切线向量，可能需要进行一些调整和转换。
-    具体的转换步骤将取决于 DirectX 11 引擎的要求和约定。
-    """
     mesh.calc_tangents()
 
     texcoord_layers = {}
@@ -1238,31 +1191,31 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
         default=True,
     )
 
-    load_buf: BoolProperty(
-        name="Load .buf files instead",
-        description="Load the mesh from the binary .buf dumps instead of the .txt files\nThis will load the entire mesh as a single object instead of separate objects from each draw call",
-        default=False,
-    )
+    # load_buf: BoolProperty(
+    #     name="Load .buf files instead",
+    #     description="Load the mesh from the binary .buf dumps instead of the .txt files\nThis will load the entire mesh as a single object instead of separate objects from each draw call",
+    #     default=False,
+    # )
 
-    merge_meshes: BoolProperty(
-        name="Merge meshes together",
-        description="Merge all selected meshes together into one object. Meshes must be related",
-        default=False,
-    )
+    # merge_meshes: BoolProperty(
+    #     name="Merge meshes together",
+    #     description="Merge all selected meshes together into one object. Meshes must be related",
+    #     default=False,
+    # )
 
-    pose_cb: StringProperty(
-        name="Bone CB",
-        description='Indicate a constant buffer slot (e.g. "vs-cb2") containing the bone matrices',
-        default="",
-    )
-
-    pose_cb_off: bpy.props.IntVectorProperty(
-        name="Bone CB range",
-        description='Indicate start and end offsets (in multiples of 4 component values) to find the matrices in the Bone CB',
-        default=[0, 0],
-        size=2,
-        min=0,
-    )
+    # pose_cb: StringProperty(
+    #     name="Bone CB",
+    #     description='Indicate a constant buffer slot (e.g. "vs-cb2") containing the bone matrices',
+    #     default="",
+    # )
+    #
+    # pose_cb_off: bpy.props.IntVectorProperty(
+    #     name="Bone CB range",
+    #     description='Indicate start and end offsets (in multiples of 4 component values) to find the matrices in the Bone CB',
+    #     default=[0, 0],
+    #     size=2,
+    #     min=0,
+    # )
 
     pose_cb_step: bpy.props.IntProperty(
         name="Vertex group step",
@@ -1562,326 +1515,6 @@ def update_vgmap(operator, context, vg_step=1):
             obj[suffix] = vgmap
 
 
-# TODO what is .vgmap file?
-class ApplyVGMap(bpy.types.Operator, ImportHelper):
-    """Apply vertex group map to the selected object"""
-    bl_idname = "mesh.migoto_vertex_group_map"
-    bl_label = "Apply 3DMigoto vgmap"
-    bl_options = {'UNDO'}
-
-    filename_ext = '.vgmap'
-    filter_glob: StringProperty(
-        default='*.vgmap',
-        options={'HIDDEN'},
-    )
-
-    # commit: BoolProperty(
-    #        name="Commit to current mesh",
-    #        description="Directly alters the vertex groups of the current mesh, rather than performing the mapping at export time",
-    #        default=False,
-    #        )
-
-    rename: BoolProperty(
-        name="Rename existing vertex groups",
-        description="Rename existing vertex groups to match the vgmap file",
-        default=True,
-    )
-
-    cleanup: BoolProperty(
-        name="Remove non-listed vertex groups",
-        description="Remove any existing vertex groups that are not listed in the vgmap file",
-        default=False,
-    )
-
-    reverse: BoolProperty(
-        name="Swap from & to",
-        description="Switch the order of the vertex group map - if this mesh is the 'to' and you want to use the bones in the 'from'",
-        default=False,
-    )
-
-    suffix: StringProperty(
-        name="Suffix",
-        description="Suffix to add to the vertex buffer filename when exporting, for bulk exports of a single mesh with multiple distinct vertex group maps",
-        default='',
-    )
-
-    def invoke(self, context, event):
-        self.suffix = ''
-        return ImportHelper.invoke(self, context, event)
-
-    def execute(self, context):
-        try:
-            keywords = self.as_keywords(ignore=('filter_glob',))
-            apply_vgmap(self, context, **keywords)
-        except Fatal as e:
-            self.report({'ERROR'}, str(e))
-        return {'FINISHED'}
-
-
-class UpdateVGMap(bpy.types.Operator):
-    """Assign new 3DMigoto vertex groups"""
-    bl_idname = "mesh.update_migoto_vertex_group_map"
-    bl_label = "Assign new 3DMigoto vertex groups"
-    bl_options = {'UNDO'}
-
-    vg_step: bpy.props.IntProperty(
-        name="Vertex group step",
-        description='If used vertex groups are 0,1,2,3,etc specify 1. If they are 0,3,6,9,12,etc specify 3',
-        default=1,
-        min=1,
-    )
-
-    def invoke(self, context, event):
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self)
-
-    def execute(self, context):
-        try:
-            keywords = self.as_keywords()
-            update_vgmap(self, context, **keywords)
-        except Fatal as e:
-            self.report({'ERROR'}, str(e))
-        return {'FINISHED'}
-
-
-class ConstantBuffer(object):
-    def __init__(self, f, start_idx, end_idx):
-        self.entries = []
-        entry = []
-        i = 0
-        for line in map(str.strip, f):
-            if line.startswith('buf') or line.startswith('cb'):
-                entry.append(float(line.split()[1]))
-                if len(entry) == 4:
-                    if i >= start_idx:
-                        self.entries.append(entry)
-                    else:
-                        print('Skipping', entry)
-                    entry = []
-                    i += 1
-                    if end_idx and i > end_idx:
-                        break
-        assert (entry == [])
-
-    def as_3x4_matrices(self):
-        return [Matrix(self.entries[i:i + 3]) for i in range(0, len(self.entries), 3)]
-
-
-def import_pose(operator, context, filepath=None, limit_bones_to_vertex_groups=True, axis_forward='-Z', axis_up='Y',
-                pose_cb_off=[0, 0], pose_cb_step=1):
-    pose_buffer = ConstantBuffer(open(filepath, 'r'), *pose_cb_off)
-
-    matrices = pose_buffer.as_3x4_matrices()
-
-    obj = context.object
-    if not context.selected_objects:
-        obj = None
-
-    if limit_bones_to_vertex_groups and obj:
-        matrices = matrices[:len(obj.vertex_groups)]
-
-    name = os.path.basename(filepath)
-    arm_data = bpy.data.armatures.new(name)
-    arm = bpy.data.objects.new(name, object_data=arm_data)
-
-    conversion_matrix = axis_conversion(from_forward=axis_forward, from_up=axis_up).to_4x4()
-
-    link_object_to_scene(context, arm)
-
-    # Construct bones (FIXME: Position these better)
-    # Must be in edit mode to add new bones
-
-    arm.select_set(True)
-    set_active_object(context, arm)
-    bpy.ops.object.mode_set(mode='EDIT')
-    for i, matrix in enumerate(matrices):
-        bone = arm_data.edit_bones.new(str(i * pose_cb_step))
-        bone.tail = Vector((0.0, 0.10, 0.0))
-    bpy.ops.object.mode_set(mode='OBJECT')
-
-    # Set pose:
-    for i, matrix in enumerate(matrices):
-        bone = arm.pose.bones[str(i * pose_cb_step)]
-        matrix.resize_4x4()
-        bone.matrix_basis = matmul(matmul(conversion_matrix, matrix), conversion_matrix.inverted())
-
-    # Apply pose to selected object, if any:
-    if obj is not None:
-        mod = obj.modifiers.new(arm.name, 'ARMATURE')
-        mod.object = arm
-        obj.parent = arm
-        # Hide pose object if it was applied to another object:
-
-        arm.hide_set(True)
-
-# TODO I have never use this in game modding and never know how to use it ,should we remove it?
-@orientation_helper(axis_forward='-Z', axis_up='Y')
-class Import3DMigotoPose(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
-    """Import a pose from a 3DMigoto constant buffer dump"""
-    bl_idname = "armature.migoto_pose"
-    bl_label = "Import 3DMigoto Pose"
-    bl_options = {'UNDO'}
-
-    filename_ext = '.txt'
-    filter_glob: StringProperty(
-        default='*.txt',
-        options={'HIDDEN'},
-    )
-
-    limit_bones_to_vertex_groups: BoolProperty(
-        name="Limit Bones to Vertex Groups",
-        description="Limits the maximum number of bones imported to the number of vertex groups of the active object",
-        default=True,
-    )
-
-    pose_cb_off: bpy.props.IntVectorProperty(
-        name="Bone CB range",
-        description='Indicate start and end offsets (in multiples of 4 component values) to find the matrices in the Bone CB',
-        default=[0, 0],
-        size=2,
-        min=0,
-    )
-
-    pose_cb_step: bpy.props.IntProperty(
-        name="Vertex group step",
-        description='If used vertex groups are 0,1,2,3,etc specify 1. If they are 0,3,6,9,12,etc specify 3',
-        default=1,
-        min=1,
-    )
-
-    def execute(self, context):
-        try:
-            keywords = self.as_keywords(ignore=('filter_glob',))
-            import_pose(self, context, **keywords)
-        except Fatal as e:
-            self.report({'ERROR'}, str(e))
-        return {'FINISHED'}
-
-
-# TODO used in a no used function.
-def find_armature(obj):
-    if obj is None:
-        return None
-    if obj.type == 'ARMATURE':
-        return obj
-    return obj.find_armature()
-
-
-# TODO used in a no used function.
-def copy_bone_to_target_skeleton(context, target_arm, new_name, src_bone):
-    is_hidden = target_arm.hide_get()
-    is_selected = target_arm.select_get()
-    prev_active = get_active_object(context)
-    target_arm.hide_set(False)
-
-    target_arm.select_set(True)
-    set_active_object(context, target_arm)
-
-    bpy.ops.object.mode_set(mode='EDIT')
-    bone = target_arm.data.edit_bones.new(new_name)
-    bone.tail = Vector((0.0, 0.10, 0.0))
-    bpy.ops.object.mode_set(mode='OBJECT')
-
-    bone = target_arm.pose.bones[new_name]
-    bone.matrix_basis = src_bone.matrix_basis
-
-    set_active_object(context, prev_active)
-    target_arm.select_set(is_selected)
-    target_arm.hide_set(is_hidden)
-
-
-# TODO this seems no functions use, used in a no used function.
-def merge_armatures(operator, context):
-    target_arm = find_armature(context.object)
-    if target_arm is None:
-        raise Fatal('No active target armature')
-    # print('target:', target_arm)
-
-    for src_obj in context.selected_objects:
-        src_arm = find_armature(src_obj)
-        if src_arm is None or src_arm == target_arm:
-            continue
-        # print('src:', src_arm)
-
-        # Create mapping between common bones:
-        bone_map = {}
-        for src_bone in src_arm.pose.bones:
-            for dst_bone in target_arm.pose.bones:
-                # Seems important to use matrix_basis - if using 'matrix'
-                # and merging multiple objects together, the last inserted bone
-                # still has the identity matrix when merging the next pose in
-                if src_bone.matrix_basis == dst_bone.matrix_basis:
-                    if src_bone.name in bone_map:
-                        operator.report({'WARNING'},
-                                        'Source bone %s.%s matched multiple bones in the destination: %s, %s' %
-                                        (src_arm.name, src_bone.name, bone_map[src_bone.name], dst_bone.name))
-                    else:
-                        bone_map[src_bone.name] = dst_bone.name
-
-        # Can't have a duplicate name, even temporarily, so rename all the
-        # vertex groups first, and rename the source pose bones to match:
-        orig_names = {}
-        for vg in src_obj.vertex_groups:
-            orig_name = vg.name
-            vg.name = '%s.%s' % (src_arm.name, vg.name)
-            orig_names[vg.name] = orig_name
-
-        # Reassign vertex groups to matching bones in target armature:
-        for vg in src_obj.vertex_groups:
-            orig_name = orig_names[vg.name]
-            if orig_name in bone_map:
-                print('%s.%s -> %s' % (src_arm.name, orig_name, bone_map[orig_name]))
-                vg.name = bone_map[orig_name]
-            elif orig_name in src_arm.pose.bones:
-                # FIXME: Make optional
-                print('%s.%s -> new %s' % (src_arm.name, orig_name, vg.name))
-                copy_bone_to_target_skeleton(context, target_arm, vg.name, src_arm.pose.bones[orig_name])
-            else:
-                print('Vertex group %s missing corresponding bone in %s' % (orig_name, src_arm.name))
-
-        # Change existing armature modifier to target:
-        for modifier in src_obj.modifiers:
-            if modifier.type == 'ARMATURE' and modifier.object == src_arm:
-                modifier.object = target_arm
-        src_obj.parent = target_arm
-        unlink_object(context, src_arm)
-
-
-# TODO Why no function use this class? should we delete it lator?
-class Merge3DMigotoPose(bpy.types.Operator):
-    """Merge identically posed bones of related armatures into one"""
-    bl_idname = "armature.merge_pose"
-    bl_label = "Merge 3DMigoto Poses"
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-        try:
-            merge_armatures(self, context)
-        except Fatal as e:
-            self.report({'ERROR'}, str(e))
-        return {'FINISHED'}
-
-
-# TODO Why no function use this class? should we delete it lator?
-class DeleteNonNumericVertexGroups(bpy.types.Operator):
-    """Remove vertex groups with non-numeric names"""
-    bl_idname = "vertex_groups.delete_non_numeric"
-    bl_label = "Remove non-numeric vertex groups"
-    bl_options = {'UNDO'}
-
-    def execute(self, context):
-        try:
-            for obj in context.selected_objects:
-                for vg in reversed(obj.vertex_groups):
-                    if vg.name.isdecimal():
-                        continue
-                    print('Removing vertex group', vg.name)
-                    obj.vertex_groups.remove(vg)
-        except Fatal as e:
-            self.report({'ERROR'}, str(e))
-        return {'FINISHED'}
-
-
 def menu_func_import_fa(self, context):
     self.layout.operator(Import3DMigotoFrameAnalysis.bl_idname, text="3DMigoto FrameAnalysis dump (ib.txt + vb0.txt)")
 
@@ -1890,28 +1523,15 @@ def menu_func_import_raw(self, context):
     self.layout.operator(Import3DMigotoRaw.bl_idname, text="3DMigoto raw buffers (.vb + .ib)")
 
 
-def menu_func_import_pose(self, context):
-    self.layout.operator(Import3DMigotoPose.bl_idname, text="3DMigoto pose (.txt)")
-
-
 def menu_func_export(self, context):
     self.layout.operator(Export3DMigoto.bl_idname, text="3DMigoto raw buffers (.vb + .ib)")
-
-
-def menu_func_apply_vgmap(self, context):
-    self.layout.operator(ApplyVGMap.bl_idname, text="Apply 3DMigoto vertex group map to current object (.vgmap)")
 
 
 register_classes = (
     Import3DMigotoFrameAnalysis,
     Import3DMigotoRaw,
     Import3DMigotoReferenceInputFormat,
-    Export3DMigoto,
-    ApplyVGMap,
-    UpdateVGMap,
-    Import3DMigotoPose,
-    Merge3DMigotoPose,
-    DeleteNonNumericVertexGroups,
+    Export3DMigoto
 )
 
 # TODO we don't need any version compatible, remove this later.
@@ -1936,8 +1556,6 @@ def register():
 
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_fa)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_raw)
-    bpy.types.TOPBAR_MT_file_import.append(menu_func_apply_vgmap)
-    bpy.types.TOPBAR_MT_file_import.append(menu_func_import_pose)
     bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
 
 
@@ -1947,8 +1565,6 @@ def unregister():
 
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_fa)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_raw)
-    bpy.types.TOPBAR_MT_file_import.remove(menu_func_apply_vgmap)
-    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_pose)
     bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
 
 
