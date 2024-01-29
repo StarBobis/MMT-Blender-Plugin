@@ -25,10 +25,18 @@ bl_info = {
 
 
 register_classes = (
+    # migoto_format
     Import3DMigotoFrameAnalysis,
     Import3DMigotoRaw,
     Import3DMigotoReferenceInputFormat,
-    Export3DMigoto
+    Export3DMigoto,
+
+    # mesh_operator
+    RemoveUnusedVertexGroupOperator,
+    MergeVertexGroupsWithSameNumber,
+    FillVertexGroupGaps,
+    MigotoRightClickMenu
+
 )
 
 # TODO we don't need any version compatible, remove this later.
@@ -57,9 +65,7 @@ def register():
     bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
 
     # mesh_operator
-    bpy.utils.register_class(RemoveUnusedVertexGroupOperator)
-    bpy.utils.register_class(MigotoRightClickMenu)
-    bpy.types.VIEW3D_MT_object_context_menu.append(menu_func_remove_unused_vgs)
+    bpy.types.VIEW3D_MT_object_context_menu.append(menu_func_migoto_right_click)
 
 
 def unregister():
@@ -72,6 +78,4 @@ def unregister():
     bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
 
     # mesh_operator
-    bpy.utils.unregister_class(RemoveUnusedVertexGroupOperator)
-    bpy.utils.unregister_class(MigotoRightClickMenu)
-    bpy.types.VIEW3D_MT_object_context_menu.remove(menu_func_remove_unused_vgs)
+    bpy.types.VIEW3D_MT_object_context_menu.remove(menu_func_migoto_right_click)
