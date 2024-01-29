@@ -1,12 +1,13 @@
-# NMBT-Blender
-Special version of 3Dmigoto blender plugin.
+# Blender Plugin
+Special version of 3Dmigoto blender plugin originally forked from https://github.com/DarkStarSword/3d-fixes.
+And modify some code to better meet our needs.
 
 # Features
 - Super light, removed a lot of unused functions.
 - Works in Blender 4.0 or above.
 
 # LICENSE
-This project use GNU3 as main LICENSE,and MPL-2.0 as backup, you can use one of them or both.
+This project use GNU3 as main LICENSE,and MPL-2.0 as backup, you can use one of them.
 - GNU GENERAL PUBLIC LICENSE Version 3
 - Mozilla Public License 2.0
 
@@ -21,7 +22,8 @@ Extra modules:
 - Numpy: pip install numpy
 
 # Acknowledgements
-The original code is mainly referenced from @Ian Munsie (darkstarsword@gmail.com), see https://github.com/DarkStarSword/3d-fixes,
+The original code is mainly forked from @Ian Munsie (darkstarsword@gmail.com),
+see https://github.com/DarkStarSword/3d-fixes,
 big thanks to his original blender plugin design.
 
 And part of the code is learned from projects below, huge thanks for their great code:
