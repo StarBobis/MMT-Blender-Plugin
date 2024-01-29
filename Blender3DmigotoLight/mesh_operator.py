@@ -118,7 +118,6 @@ class MergeVertexGroupsWithSameNumber(bpy.types.Operator):
         return merge_vertex_group_with_same_number(self, context)
 
 
-
 def fill_vertex_group_gaps(self, context):
     # Author: SilentNightSound#7430
     # Fills in missing vertex groups for a model so there are no gaps, and sorts to make sure everything is in order
@@ -159,6 +158,56 @@ class FillVertexGroupGaps(bpy.types.Operator):
         return fill_vertex_group_gaps(self, context)
 
 
+def add_bone_from_vertex_group(self, context):
+    # 获取当前选中的物体
+    selected_object = bpy.context.object
+
+    # 创建骨骼
+    bpy.ops.object.armature_add()
+    armature_object = bpy.context.object
+    armature = armature_object.data
+
+    # 切换到编辑模式
+    bpy.ops.object.mode_set(mode='EDIT')
+
+    # 遍历所有的顶点组
+    for vertex_group in selected_object.vertex_groups:
+        # 获取顶点组的名称
+        vertex_group_name = vertex_group.name
+
+        # 创建骨骼
+        bone = armature.edit_bones.new(vertex_group_name)
+
+        # 根据顶点组位置生成骨骼
+        for vertex in selected_object.data.vertices:
+            for group_element in vertex.groups:
+                if group_element.group == vertex_group.index:
+                    # 获取顶点位置
+                    vertex_position = selected_object.matrix_world @ vertex.co
+
+                    # 设置骨骼位置
+                    bone.head = vertex_position
+                    bone.tail = Vector(vertex_position) + Vector((0, 0, 0.1))  # 设置骨骼长度
+
+                    # 分配顶点到骨骼
+                    bone_vertex_group = selected_object.vertex_groups[vertex_group_name]
+                    bone_vertex_group.add([vertex.index], 0, 'ADD')
+
+    # 刷新场景
+    bpy.context.view_layer.update()
+
+    # 切换回对象模式
+    bpy.ops.object.mode_set(mode='OBJECT')
+    return {'FINISHED'}
+
+
+class AddBoneFromVertexGroup(bpy.types.Operator):
+    bl_idname = "object.add_bone_from_vertex_group"
+    bl_label = "Add Bone From Vertex Group"
+
+    def execute(self, context):
+        return add_bone_from_vertex_group(self, context)
+
 
 class MigotoRightClickMenu(bpy.types.Menu):
     bl_idname = "VIEW3D_MT_object_3Dmigoto"
@@ -169,6 +218,7 @@ class MigotoRightClickMenu(bpy.types.Menu):
         layout.operator("object.remove_unused_vertex_group")
         layout.operator("object.merge_vertex_group_with_same_number")
         layout.operator("object.fill_vertex_group_gaps")
+        layout.operator("object.add_bone_from_vertex_group")
 
 
 # 定义菜单项的注册函数

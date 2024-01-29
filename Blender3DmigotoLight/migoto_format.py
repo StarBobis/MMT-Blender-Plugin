@@ -1445,12 +1445,6 @@ def update_vgmap(operator, context, vg_step=1):
 
 
 
-
-
-
-
-
-
 # -----------------------------Menu Function define-------------------------------------
 
 

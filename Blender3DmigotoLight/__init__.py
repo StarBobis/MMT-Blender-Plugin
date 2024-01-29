@@ -17,7 +17,7 @@ bl_info = {
     "author": "NicoMico",
     "description": "Special version blender plugin for 3Dmigoto Mod.",
     "blender": (4, 0, 0),
-    "version": (1, 2),
+    "version": (1, 3),
     "location": "View3D",
     "warning": "",
     "category": "Generic"
@@ -35,9 +35,11 @@ register_classes = (
     RemoveUnusedVertexGroupOperator,
     MergeVertexGroupsWithSameNumber,
     FillVertexGroupGaps,
+    AddBoneFromVertexGroup,
     MigotoRightClickMenu
 
 )
+
 
 # TODO we don't need any version compatible, remove this later.
 # https://theduckcow.com/2019/update-addons-both-blender-28-and-27-support/
