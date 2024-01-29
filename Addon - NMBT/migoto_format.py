@@ -1442,3 +1442,25 @@ def update_vgmap(operator, context, vg_step=1):
                 vgmap[vg] = highest
                 operator.report({'INFO'}, 'Assigned named vertex group %s = %i' % (vg, vgmap[vg]))
             obj[suffix] = vgmap
+
+
+
+
+
+
+
+
+
+# -----------------------------Menu Function define-------------------------------------
+
+
+def menu_func_import_fa(self, context):
+    self.layout.operator(Import3DMigotoFrameAnalysis.bl_idname, text="3DMigoto FrameAnalysis dump (ib.txt + vb0.txt)")
+
+
+def menu_func_import_raw(self, context):
+    self.layout.operator(Import3DMigotoRaw.bl_idname, text="3DMigoto raw buffers (.vb + .ib)")
+
+
+def menu_func_export(self, context):
+    self.layout.operator(Export3DMigoto.bl_idname, text="3DMigoto raw buffers (.vb + .ib)")

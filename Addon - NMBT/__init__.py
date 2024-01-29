@@ -24,18 +24,6 @@ bl_info = {
 }
 
 
-def menu_func_import_fa(self, context):
-    self.layout.operator(Import3DMigotoFrameAnalysis.bl_idname, text="3DMigoto FrameAnalysis dump (ib.txt + vb0.txt)")
-
-
-def menu_func_import_raw(self, context):
-    self.layout.operator(Import3DMigotoRaw.bl_idname, text="3DMigoto raw buffers (.vb + .ib)")
-
-
-def menu_func_export(self, context):
-    self.layout.operator(Export3DMigoto.bl_idname, text="3DMigoto raw buffers (.vb + .ib)")
-
-
 register_classes = (
     Import3DMigotoFrameAnalysis,
     Import3DMigotoRaw,
@@ -63,17 +51,27 @@ def register():
         make_annotations(cls)
         bpy.utils.register_class(cls)
 
+    # migoto_format
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_fa)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_raw)
     bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
+
+    # mesh_operator
+    bpy.utils.register_class(RemoveUnusedVertexGroupOperator)
+    bpy.utils.register_class(MigotoRightClickMenu)
+    bpy.types.VIEW3D_MT_object_context_menu.append(menu_func_remove_unused_vgs)
 
 
 def unregister():
     for cls in reversed(register_classes):
         bpy.utils.unregister_class(cls)
 
+    # migoto_format
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_fa)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_raw)
     bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
 
-
+    # mesh_operator
+    bpy.utils.unregister_class(RemoveUnusedVertexGroupOperator)
+    bpy.utils.unregister_class(MigotoRightClickMenu)
+    bpy.types.VIEW3D_MT_object_context_menu.remove(menu_func_remove_unused_vgs)
