@@ -10,12 +10,6 @@
 from .utils import *
 
 
-
-
-
-
-
-
 def remove_unused_vertex_group(self, context):
     obj = bpy.context.active_object
     obj.update_from_editmode()
