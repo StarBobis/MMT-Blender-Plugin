@@ -209,6 +209,24 @@ class AddBoneFromVertexGroup(bpy.types.Operator):
         return add_bone_from_vertex_group(self, context)
 
 
+def remove_not_number_vertex_group(self, context):
+    for obj in bpy.context.selected_objects:
+        for vg in reversed(obj.vertex_groups):
+            if vg.name.isdecimal():
+                continue
+            # print('Removing vertex group', vg.name)
+            obj.vertex_groups.remove(vg)
+    return {'FINISHED'}
+
+
+class RemoveNotNumberVertexGroup(bpy.types.Operator):
+    bl_idname = "object.remove_not_number_vertex_group"
+    bl_label = "Remove Not Number Vertex Group"
+
+    def execute(self, context):
+        return remove_not_number_vertex_group(self, context)
+
+
 class MigotoRightClickMenu(bpy.types.Menu):
     bl_idname = "VIEW3D_MT_object_3Dmigoto"
     bl_label = "3Dmigoto"
@@ -219,6 +237,7 @@ class MigotoRightClickMenu(bpy.types.Menu):
         layout.operator("object.merge_vertex_group_with_same_number")
         layout.operator("object.fill_vertex_group_gaps")
         layout.operator("object.add_bone_from_vertex_group")
+        layout.operator("object.remove_not_number_vertex_group")
 
 
 # 定义菜单项的注册函数

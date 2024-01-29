@@ -36,6 +36,7 @@ register_classes = (
     MergeVertexGroupsWithSameNumber,
     FillVertexGroupGaps,
     AddBoneFromVertexGroup,
+    RemoveNotNumberVertexGroup,
     MigotoRightClickMenu
 
 )
