@@ -7,7 +7,10 @@
 # - https://github.com/SilentNightSound/SR-Model-Importer
 # - https://github.com/leotorrez/LeoTools
 
-
+# The __init__.py only designed to register and unregister ,so as a simple control for the whole plugin,
+# keep it clean and don't add too many code,code should be in other files and import it here.
+# we use .utils instead of utils because blender can't locate where utils is
+# Blender can only locate utils.py  when you add a . before it.
 from .utils import *
 from .migoto_format import *
 from .mesh_operator import *

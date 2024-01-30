@@ -7,6 +7,8 @@
 # - https://github.com/SilentNightSound/SR-Model-Importer
 # - https://github.com/leotorrez/LeoTools
 
+# This migoto_format.py is only used in 3dmigoto import and export options.
+
 from .utils import *
 
 # TODO Strange design again, wtf is this?

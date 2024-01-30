@@ -7,6 +7,8 @@
 # - https://github.com/SilentNightSound/SR-Model-Importer
 # - https://github.com/leotorrez/LeoTools
 
+# This mesh_operator.py is only used in right click options.
+
 from .utils import *
 
 

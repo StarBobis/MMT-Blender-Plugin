@@ -7,6 +7,7 @@
 # - https://github.com/SilentNightSound/SR-Model-Importer
 # - https://github.com/leotorrez/LeoTools
 
+# This utils.py is only used in common help functions and imports.
 
 import io
 import re
