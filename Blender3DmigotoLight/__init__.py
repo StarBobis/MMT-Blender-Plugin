@@ -40,6 +40,7 @@ register_classes = (
     FillVertexGroupGaps,
     AddBoneFromVertexGroup,
     RemoveNotNumberVertexGroup,
+    ConvertToFragmentOperator,
     MigotoRightClickMenu
 
 )

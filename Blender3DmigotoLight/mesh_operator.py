@@ -229,6 +229,75 @@ class RemoveNotNumberVertexGroup(bpy.types.Operator):
         return remove_not_number_vertex_group(self, context)
 
 
+def convert_to_fragment(self, context):
+    # 获取当前选中的对象
+    selected_objects = bpy.context.selected_objects
+
+    # 检查是否选中了一个Mesh对象
+    if len(selected_objects) != 1 or selected_objects[0].type != 'MESH':
+        raise ValueError("请选中一个Mesh对象")
+
+    # 获取选中的网格对象
+    mesh_obj = selected_objects[0]
+    mesh = mesh_obj.data
+
+    # 遍历所有面
+    selected_face_index = -1
+    for i, face in enumerate(mesh.polygons):
+        # 检查当前面是否已经是一个三角形
+        if len(face.vertices) == 3:
+            selected_face_index = i
+            break
+
+    if selected_face_index == -1:
+        raise ValueError("没有选中的三角形面")
+
+    # 选择指定索引的面
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='DESELECT')
+
+    # 选择指定面的所有顶点
+    bpy.context.tool_settings.mesh_select_mode[0] = True
+    bpy.context.tool_settings.mesh_select_mode[1] = False
+    bpy.context.tool_settings.mesh_select_mode[2] = False
+
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+    # 获取选中面的所有顶点索引
+    selected_face = mesh.polygons[selected_face_index]
+    selected_vertices = [v for v in selected_face.vertices]
+
+    # 删除非选定面的顶点
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='DESELECT')
+
+    bpy.context.tool_settings.mesh_select_mode[0] = True
+    bpy.context.tool_settings.mesh_select_mode[1] = False
+    bpy.context.tool_settings.mesh_select_mode[2] = False
+
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+    for vertex in mesh.vertices:
+        if vertex.index not in selected_vertices:
+            vertex.select = True
+
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.delete(type='VERT')
+
+    # 切换回对象模式
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+    return {'FINISHED'}
+
+
+class ConvertToFragmentOperator(bpy.types.Operator):
+    bl_idname = "object.convert_to_fragment"
+    bl_label = "Convert To Fragment"
+
+    def execute(self, context):
+        return convert_to_fragment(self, context)
+
+
 class MigotoRightClickMenu(bpy.types.Menu):
     bl_idname = "VIEW3D_MT_object_3Dmigoto"
     bl_label = "3Dmigoto"
@@ -240,6 +309,7 @@ class MigotoRightClickMenu(bpy.types.Menu):
         layout.operator("object.fill_vertex_group_gaps")
         layout.operator("object.add_bone_from_vertex_group")
         layout.operator("object.remove_not_number_vertex_group")
+        layout.operator("object.convert_to_fragment")
 
 
 # 定义菜单项的注册函数
