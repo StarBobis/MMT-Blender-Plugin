@@ -1126,6 +1126,13 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
     bl_options = {'PRESET', 'UNDO'}
 
     filename_ext = '.txt'
+
+    directory: StringProperty(
+        name="Directory",
+        subtype='DIR_PATH',
+        default= "",
+    )
+
     filter_glob: StringProperty(
         default='*.txt',
         options={'HIDDEN'},
@@ -1362,10 +1369,19 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
 
     # file extension
     filename_ext = '.vb'
+
     # file type filter
     filter_glob: StringProperty(
         default='*.vb',
         options={'HIDDEN'},
+    )
+
+    # 默认选择文件路径
+    filepath: bpy.props.StringProperty(
+        name="File Path",
+        description="Filepath used for exporting",
+        subtype='FILE_PATH',
+        default="//output.vb",  # 设置默认路径
     )
 
     # where you do export logic

@@ -29,6 +29,11 @@ bl_info = {
 
 register_classes = (
     # migoto_format
+    MMTPathProperties,
+    MMTPathOperator,
+    MMTPanel,
+
+    #
     Import3DMigotoFrameAnalysis,
     Import3DMigotoRaw,
     Import3DMigotoReferenceInputFormat,
@@ -66,6 +71,9 @@ def register():
         make_annotations(cls)
         bpy.utils.register_class(cls)
 
+
+    bpy.types.Scene.mmt_props = bpy.props.PointerProperty(type=MMTPathProperties)
+
     # migoto_format
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_fa)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_raw)
@@ -78,6 +86,8 @@ def register():
 def unregister():
     for cls in reversed(register_classes):
         bpy.utils.unregister_class(cls)
+
+    del bpy.types.Scene.mmt_props
 
     # migoto_format
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_fa)
