@@ -1,6 +1,7 @@
 # Blender Plugin
 Special version of 3Dmigoto blender plugin originally forked from https://github.com/DarkStarSword/3d-fixes.
-And modify some code to better meet our needs.
+And modify some code to better meet our needs, mainly developed for my private tool MMT 
+but can also used as a general plugin.
 
 # Features
 - Super light, removed a lot of unused functions.
