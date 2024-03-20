@@ -1,0 +1,2 @@
+numpy
+fake-bpy-module-4.0

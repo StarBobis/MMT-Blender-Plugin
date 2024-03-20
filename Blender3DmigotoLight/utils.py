@@ -29,6 +29,8 @@ from bpy_extras.image_utils import load_image
 from mathutils import Matrix, Vector
 from bpy_extras.io_utils import orientation_helper
 
+import logging
+
 
 class MMTPathProperties(bpy.types.PropertyGroup):
     path: bpy.props.StringProperty(
@@ -44,11 +46,19 @@ class MMTPathOperator(bpy.types.Operator):
     bl_label = "Select Folder"
 
     def execute(self, context):
+        bpy.ops.wm.console_toggle()  # 打开控制台面板
         # 在这里处理文件夹选择逻辑
         bpy.ops.ui.directory_dialog('INVOKE_DEFAULT', directory=context.scene.mmt_props.path)
 
+        print(context.scene.mmt_props.path)
+        mmt_path = os.path.join(context.scene.mmt_props.path, "MMT.exe")
         # TODO 在这里读取配置文件，并设置outputFolder的路径为当前选择游戏的路径。设置当前游戏的提示，设置MMT path
+        if os.path.exists(mmt_path):
+            print("MMT.exe exists.")
+        else:
+            print(mmt_path)
 
+        bpy.ops.wm.console_toggle()  # 关闭控制台面板
         return {'FINISHED'}
 
 
