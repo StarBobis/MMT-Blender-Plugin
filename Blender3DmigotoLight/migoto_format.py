@@ -1233,7 +1233,7 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
 
         try:
             keywords = self.as_keywords(
-                ignore=('filepath', 'files', 'filter_glob', 'load_related', 'load_buf', 'pose_cb'))
+                ignore=('filepath', 'files', 'filter_glob', 'load_related', 'load_buf', 'pose_cb','directory'))
             paths = self.get_vb_ib_paths()
 
             import_3dmigoto(self, context, paths, **keywords)
