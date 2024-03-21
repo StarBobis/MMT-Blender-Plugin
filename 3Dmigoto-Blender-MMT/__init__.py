@@ -49,8 +49,8 @@ register_classes = (
     MigotoRightClickMenu,
 
     # MMT的一键导入导出
-    MMTImportAllTextModel
-
+    MMTImportAllTextModel,
+    MMTExportAllIBVBModel
 )
 
 

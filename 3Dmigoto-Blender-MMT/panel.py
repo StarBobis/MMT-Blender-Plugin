@@ -109,7 +109,7 @@ class MMTPanel(bpy.types.Panel):
 
         row = layout.row()
         # 在这里添加你的侧边栏内容
-        row.label(text="NicoMico's MMT Plugin V1.4")
+        row.label(text="NicoMico's MMT Plugin V1.4.1")
 
         row.operator("wm.url_open", text="Check Update", icon='URL').url = "https://github.com/StarBobis/3Dmigoto-Blender-MMT/releases"
         props = context.scene.mmt_props
@@ -166,7 +166,6 @@ class MMTPanel(bpy.types.Panel):
 
 
         # TODO 一键快速导出当前选中Collection中的所有model到对应的hash值文件夹中，并直接调用MMT.exe的Mod生成方法，做到导出完即可游戏里F10刷新看效果。
-        # operator_export_ibvb = self.layout.operator("export_mesh.migoto", text="Export selected collection to generated mod folder ")
-        # operator_export_ibvb.filepath = context.scene.mmt_props.path + "1.vb"
+        operator_export_ibvb = self.layout.operator("mmt.export_all", text="Export selected collection's vb model to OutputFolder")
 
 
