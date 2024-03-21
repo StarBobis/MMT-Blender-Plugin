@@ -9,7 +9,7 @@
 
 # This migoto_format.py is only used in 3dmigoto import and export options.
 
-from .utils import *
+from .panel import *
 
 # TODO Strange design again, wtf is this?
 IOOBJOrientationHelper = type('DummyIOOBJOrientationHelper', (object,), {})
@@ -865,6 +865,7 @@ def import_3dmigoto(operator, context, paths, merge_meshes=False, **kwargs):
         for p in paths:
             try:
                 obj.append(import_3dmigoto_vb_ib(operator, context, [p], **kwargs))
+
             except Fatal as e:
                 operator.report({'ERROR'}, str(e) + ': ' + str(p[:2]))
         # FIXME: Group objects together
@@ -923,6 +924,7 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     #                 axis_forward=axis_forward, axis_up=axis_up,
     #                 pose_cb_off=pose_cb_off, pose_cb_step=pose_cb_step)
     #     set_active_object(context, obj)
+    operator.report({'INFO'}, "Import Into 3Dmigoto")
 
     return obj
 
@@ -1219,6 +1221,7 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             if len(ib_paths) != 1 or len(vb_paths) != 1:
                 raise Fatal(
                     'Only draw calls using a single vertex buffer and a single index buffer are supported for now')
+
             ret.add((vb_paths[0], ib_paths[0], use_bin, pose_path))
         return ret
 
@@ -1235,7 +1238,7 @@ class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrienta
             keywords = self.as_keywords(
                 ignore=('filepath', 'files', 'filter_glob', 'load_related', 'load_buf', 'pose_cb','directory'))
             paths = self.get_vb_ib_paths()
-
+            self.report({'INFO'}, "test：" + str(paths))
             import_3dmigoto(self, context, paths, **keywords)
         except Fatal as e:
             self.report({'ERROR'}, str(e))

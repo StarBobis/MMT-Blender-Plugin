@@ -10,8 +10,8 @@
 # The __init__.py only designed to register and unregister ,so as a simple control for the whole plugin,
 # keep it clean and don't add too many code,code should be in other files and import it here.
 # we use .utils instead of utils because blender can't locate where utils is
-# Blender can only locate utils.py  when you add a . before it.
-from .utils import *
+# Blender can only locate panel.py  when you add a . before it.
+from .panel import *
 from .migoto_format import *
 from .mesh_operator import *
 
@@ -46,7 +46,10 @@ register_classes = (
     AddBoneFromVertexGroup,
     RemoveNotNumberVertexGroup,
     ConvertToFragmentOperator,
-    MigotoRightClickMenu
+    MigotoRightClickMenu,
+
+    # MMT的一键导入导出
+    MMTImportAllTextModel
 
 )
 
@@ -83,6 +86,7 @@ def register():
     # mesh_operator
     bpy.types.VIEW3D_MT_object_context_menu.append(menu_func_migoto_right_click)
 
+    # 在Blender退出前保存选择的MMT的路径
     bpy.app.handlers.depsgraph_update_post.append(save_mmt_path)
 
 

@@ -7,7 +7,7 @@
 # - https://github.com/SilentNightSound/SR-Model-Importer
 # - https://github.com/leotorrez/LeoTools
 
-# This utils.py is only used in common help functions and imports.
+# This panel.py is only used in common help functions and imports.
 
 import io
 import re
@@ -161,9 +161,9 @@ class MMTPanel(bpy.types.Panel):
         layout.separator()
 
         # TODO 一键快速导入所有位于OutputFolder下的.txt模型
-        # layout.label(text="Fast import&export in OutputFolder")
-        # operator44 = self.layout.operator("import_mesh.migoto_frame_analysis", text="Import All .txt model in OutputFolder ")
-        # operator44.filepath = context.scene.mmt_props.path + "1.vb"
+        layout.label(text="Fast import&export in OutputFolder")
+        operator_fast_import = self.layout.operator("mmt.import_all", text="Import All .txt model in OutputFolder ")
+
 
         # TODO 一键快速导出当前选中Collection中的所有model到对应的hash值文件夹中，并直接调用MMT.exe的Mod生成方法，做到导出完即可游戏里F10刷新看效果。
         # operator_export_ibvb = self.layout.operator("export_mesh.migoto", text="Export selected collection to generated mod folder ")

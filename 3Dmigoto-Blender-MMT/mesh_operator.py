@@ -9,7 +9,8 @@
 
 # This mesh_operator.py is only used in right click options.
 
-from .utils import *
+from .panel import *
+from .migoto_format import *
 
 
 def remove_unused_vertex_group(self, context):
@@ -317,6 +318,60 @@ def menu_func_migoto_right_click(self, context):
     self.layout.menu(MigotoRightClickMenu.bl_idname)
 
 
+class MMTImportAllTextModel(bpy.types.Operator):
+    bl_idname = "mmt.import_all"
+    bl_label = "Import all txt model from current OutputFolder"
 
+    def execute(self, context):
+        # 首先根据MMT路径，获取
+        mmt_path = bpy.context.scene.mmt_props.path
+        current_game = ""
+        main_setting_path = os.path.join(context.scene.mmt_props.path, "Configs\\wheel_setting\\MainSetting.json")
+        if os.path.exists(main_setting_path):
+            main_setting_file = open(main_setting_path)
+            main_setting_json = json.load(main_setting_file)
+            main_setting_file.close()
+            current_game = main_setting_json["GameName"]
 
+        game_config_path = os.path.join(context.scene.mmt_props.path, "Configs\\game_config\\" + current_game + "Config.json")
+        game_config_file = open(game_config_path)
+        game_config_json = json.load(game_config_file)
+        game_config_file.close()
 
+        output_folder_path = ""
+        game_setting_path = os.path.join(context.scene.mmt_props.path, "Configs\\wheel_setting\\GameSetting.json")
+        if os.path.exists(game_setting_path):
+            game_setting_file = open(game_setting_path)
+            game_setting_json = json.load(game_setting_file)
+            game_setting_file.close()
+            output_folder_path = str(game_setting_json[current_game + "_Dev"]["OutputFolder"]).replace("/","\\")
+
+        import_folder_path_list = []
+        for ib_config in game_config_json:
+            draw_ib = ib_config["DrawIB"]
+            # print("DrawIB:", draw_ib)
+            import_folder_path_list.append(os.path.join(output_folder_path, draw_ib))
+
+        # self.report({'INFO'}, "读取到的drawIB文件夹总数量：" + str(len(import_folder_path_list)))
+
+        for import_folder_path in import_folder_path_list:
+            prefix_set = set()
+            # (1) 获取所有txt文件列表
+            # self.report({'INFO'}, "Folder Name：" + import_folder_path)
+            # 构造需要匹配的文件路径模式
+            file_pattern = os.path.join(import_folder_path, "*.txt")
+            # 使用 glob.glob 获取匹配的文件列表
+            txt_file_list = glob(file_pattern)
+            for txt_file_path in txt_file_list:
+                # self.report({'INFO'}, "txt file: " + txt_file_path)
+                txt_file_splits = os.path.basename(txt_file_path).split("-")
+                prefix_set.add(txt_file_splits[0] + "-" + txt_file_splits[1])
+
+            # (2)
+            special_path4_set = set()
+            for prefix in prefix_set:
+                self.report({'INFO'}, "txt file prefix ib: " + import_folder_path + "\\" + prefix + "-ib.txt")
+                self.report({'INFO'}, "txt file prefix vb0: " + import_folder_path + "\\" + prefix + "-vb0.txt")
+                special_path4_set.add((import_folder_path + "\\" + prefix + "-vb0.txt", import_folder_path + "\\" + prefix + "-ib.txt", False,None))
+            import_3dmigoto(self, context, special_path4_set)
+        return {'FINISHED'}
