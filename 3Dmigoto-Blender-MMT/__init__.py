@@ -20,7 +20,7 @@ bl_info = {
     "author": "NicoMico",
     "description": "Special version blender plugin for 3Dmigoto Mod.",
     "blender": (4, 0, 0),
-    "version": (1, 3),
+    "version": (1, 4, 1),
     "location": "View3D",
     "warning": "",
     "category": "Generic"
@@ -71,8 +71,9 @@ def register():
         make_annotations(cls)
         bpy.utils.register_class(cls)
 
-
+    # 新建一个属性用来专门装MMT的路径
     bpy.types.Scene.mmt_props = bpy.props.PointerProperty(type=MMTPathProperties)
+
 
     # migoto_format
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import_fa)
@@ -81,6 +82,10 @@ def register():
 
     # mesh_operator
     bpy.types.VIEW3D_MT_object_context_menu.append(menu_func_migoto_right_click)
+
+    bpy.app.handlers.depsgraph_update_post.append(save_mmt_path)
+
+
 
 
 def unregister():
@@ -96,3 +101,5 @@ def unregister():
 
     # mesh_operator
     bpy.types.VIEW3D_MT_object_context_menu.remove(menu_func_migoto_right_click)
+
+
