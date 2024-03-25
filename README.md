@@ -22,6 +22,9 @@ Extra modules:
 - Fake bpy: https://github.com/nutti/fake-bpy-module (pip install fake-bpy-module-4.0 or pip install fake-bpy-module-3.6)
 - Numpy: pip install numpy
 
+# Ask for help
+https://discord.gg/Cz577BcRf5
+
 # Acknowledgements
 The original code is mainly forked from @Ian Munsie (darkstarsword@gmail.com),
 see https://github.com/DarkStarSword/3d-fixes,
