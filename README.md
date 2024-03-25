@@ -1,26 +1,21 @@
 # Blender Plugin
 Special version of 3Dmigoto blender plugin originally forked from https://github.com/DarkStarSword/3d-fixes.
-And modify some code to better meet our needs, mainly developed for my private tool MMT 
-but can also used as a general plugin.
-
-# Features
-- Super light, removed a lot of unused functions.
-- Works in Blender 4.0 or above.
-
-# LICENSE
-This project use GNU3 as main LICENSE,and MPL-2.0 as backup, you can use one of them.
-- GNU GENERAL PUBLIC LICENSE Version 3
-- Mozilla Public License 2.0
+And modify some code to better meet our needs, mainly developed for MMT(MigotoModTool).
 
 # Develop Environment
 - OS: Windows 11 Pro
 - IDE: Pycharm Community 2023.3
 - Pycharm plugin: Pycharm-Blender-Plugin(https://github.com/BlackStartx/PyCharm-Blender-Plugin) 2023.3
-- Blender Version: 4.0
+- Blender Version: 4.0 (or at least 3.6.8 LTS)
 
 Extra modules: 
 - Fake bpy: https://github.com/nutti/fake-bpy-module (pip install fake-bpy-module-4.0 or pip install fake-bpy-module-3.6)
 - Numpy: pip install numpy
+
+# LICENSE
+This project use GNU3 as main LICENSE,and MPL-2.0 as backup, you can use one of them.
+- GNU GENERAL PUBLIC LICENSE Version 3
+- Mozilla Public License 2.0
 
 # Ask for help
 https://discord.gg/Cz577BcRf5

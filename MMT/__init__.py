@@ -18,7 +18,7 @@ from .mesh_operator import *
 bl_info = {
     "name": "MMT-Blender Plugin",
     "author": "NicoMico",
-    "description": "Special version blender plugin for 3Dmigoto Mod.",
+    "description": "Special fork version of DarkStarSword's blender_3dmigoto.py",
     "blender": (4, 0, 0),
     "version": (1, 4, 2),
     "location": "View3D",
