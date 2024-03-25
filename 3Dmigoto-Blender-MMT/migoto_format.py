@@ -1046,7 +1046,11 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
     indices = [l.vertex_index for l in mesh.loops]
     faces = [indices[i:i + 3] for i in range(0, len(indices), 3)]
     try:
-        ib_format = obj['3DMigoto:IBFormat']
+        if obj['3DMigoto:IBFormat'] == "DXGI_FORMAT_R16_UINT":
+            ib_format = "DXGI_FORMAT_R32_UINT"
+        else:
+            ib_format = obj['3DMigoto:IBFormat']
+
     except KeyError:
         ib = None
         raise Fatal('FIXME: Add capability to export without an index buffer')
