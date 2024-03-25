@@ -16,11 +16,11 @@ from .migoto_format import *
 from .mesh_operator import *
 
 bl_info = {
-    "name": "3Dmigoto Plugin",
+    "name": "MMT-Blender Plugin",
     "author": "NicoMico",
     "description": "Special version blender plugin for 3Dmigoto Mod.",
     "blender": (4, 0, 0),
-    "version": (1, 4, 1),
+    "version": (1, 4, 2),
     "location": "View3D",
     "warning": "",
     "category": "Generic"
