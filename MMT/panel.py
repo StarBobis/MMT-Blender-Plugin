@@ -1,12 +1,3 @@
-# Acknowledgements
-# The original code is mainly forked from @Ian Munsie (darkstarsword@gmail.com)
-# see https://github.com/DarkStarSword/3d-fixes,
-# big thanks to his original blender plugin design.
-# And part of the code is learned from projects below, huge thanks for their great code:
-# - https://github.com/SilentNightSound/GI-Model-Importer
-# - https://github.com/SilentNightSound/SR-Model-Importer
-# - https://github.com/leotorrez/LeoTools
-
 # This panel.py is only used in common help functions and imports.
 
 import io
@@ -101,7 +92,7 @@ class MMTPanel(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'MMT'
-    bl_region_width = 600
+    bl_region_width = 600 # TODO 记得点开之后就设置宽度啊
 
     def draw(self, context):
 
@@ -109,14 +100,15 @@ class MMTPanel(bpy.types.Panel):
 
         row = layout.row()
         # 在这里添加你的侧边栏内容
-        row.label(text="NicoMico's MMT Plugin V1.4.2")
+        row.label(text="NicoMico's MMT Plugin V1.4.5")
 
-        row.operator("wm.url_open", text="Check Update", icon='URL').url = "https://github.com/StarBobis/3Dmigoto-Blender-MMT/releases"
+        row.operator("wm.url_open", text="Check Update", icon='URL').url = "https://github.com/StarBobis/MigotoModTool/releases"
         props = context.scene.mmt_props
         layout.prop(props, "path")
 
         # 获取MMT.exe的路径
         mmt_path = os.path.join(context.scene.mmt_props.path, "MMT.exe")
+        mmt_location = os.path.dirname(mmt_path)
         if os.path.exists(mmt_path):
             layout.label(text="MMT: " + mmt_path)
         else:
@@ -124,7 +116,7 @@ class MMTPanel(bpy.types.Panel):
 
         # 读取MainSetting.json中当前游戏名称
         current_game = ""
-        main_setting_path = os.path.join(context.scene.mmt_props.path, "Configs\\wheel_setting\\MainSetting.json")
+        main_setting_path = os.path.join(context.scene.mmt_props.path, "Configs\\Main.json")
         if os.path.exists(main_setting_path):
             main_setting_file = open(main_setting_path)
             main_setting_json = json.load(main_setting_file)
@@ -132,19 +124,10 @@ class MMTPanel(bpy.types.Panel):
             current_game = main_setting_json["GameName"]
             layout.label(text="Working game: " + current_game)
         else:
-            layout.label(text="Error: Can't find MainSetting.json! ", icon='ERROR')
+            layout.label(text="Error: Can't GameName find Main.json! ", icon='ERROR')
 
         # 根据当前游戏名称，读取GameSetting中的OutputFolder路径并设置
-        output_folder_path = ""
-        game_setting_path = os.path.join(context.scene.mmt_props.path, "Configs\\wheel_setting\\GameSetting.json")
-        if os.path.exists(game_setting_path):
-            game_setting_file = open(game_setting_path)
-            game_setting_json = json.load(game_setting_file)
-            game_setting_file.close()
-            output_folder_path = game_setting_json[current_game + "_Dev"]["OutputFolder"]
-            layout.label(text="OutputFolder: " + output_folder_path)
-        else:
-            layout.label(text="Error: Can't find GameSetting.json! ", icon='ERROR')
+        output_folder_path = mmt_location + "\\Games\\" + current_game + "\\3Dmigoto\\Mods\\output\\"
 
         layout.separator()
         layout.label(text="Seperate import&export in OutputFolder")
@@ -152,6 +135,10 @@ class MMTPanel(bpy.types.Panel):
         # 快速导入，点这个之后默认路径为OutputFolder，这样直接就能去导入不用翻很久文件夹找路径了
         operator_import_txt = self.layout.operator("import_mesh.migoto_frame_analysis", text="Import .txt models ")
         operator_import_txt.directory = output_folder_path
+
+        # 新增快速导入buf文件
+        operator_import_ib_vb = self.layout.operator("import_mesh.migoto_raw_buffers", text="Import .ib & .vb models ")
+        operator_import_ib_vb.filepath = output_folder_path
 
         # 快速导出同理，点这个之后默认路径为OutputFolder，这样直接就能去导出不用翻很久文件夹找路径了
         operator_export_ibvb = self.layout.operator("export_mesh.migoto", text="Export .ib & .vb files ")
@@ -164,8 +151,44 @@ class MMTPanel(bpy.types.Panel):
         layout.label(text="Fast import&export in OutputFolder")
         operator_fast_import = self.layout.operator("mmt.import_all", text="Import All .txt model in OutputFolder ")
 
-
         # 一键快速导出当前选中Collection中的所有model到对应的hash值文件夹中，并直接调用MMT.exe的Mod生成方法，做到导出完即可游戏里F10刷新看效果。
         operator_export_ibvb = self.layout.operator("mmt.export_all", text="Export selected collection's vb model to OutputFolder")
+
+        # 添加分隔符
+        layout.separator()
+
+        # 导出MMD的Bone Matrix，连续骨骼变换矩阵，并生成ini文件
+        row = layout.row()
+        row.label(text="MMD Animation Mod")
+        operator_export_mmd_bone_matrix = row.operator("mmt.export_mmd_animation_mod", text="Export MMD Mod")
+        operator_export_mmd_bone_matrix.output_folder = output_folder_path
+        row = layout.row()
+        row.prop(context.scene, "mmt_mmd_animation_mod_start_frame")
+        row.prop(context.scene, "mmt_mmd_animation_mod_end_frame")
+        row.prop(context.scene, "mmt_mmd_animation_mod_play_speed")
+
+        #
+        # # 添加分隔符
+        # layout.separator()
+        #
+        # # 将当前动画的每一帧都转换为一个Position.buf然后导出，并生成逐帧ini文件
+        # row = layout.row()
+        # row.label(text="FrameBased Animation Mod")
+        # operator_export_mmd_bone_matrix = row.operator("export_mesh.migoto", text="Export Position Files")
+        # row = layout.row()
+        # row.prop(context.scene, "mmt_mmd_animation_mod_start_frame")
+        # row.prop(context.scene, "mmt_mmd_animation_mod_end_frame")
+        # row.prop(context.scene, "mmt_mmd_animation_mod_play_speed")
+        # # 添加分隔符
+        # layout.separator()
+        #
+        # # 一键快速导入所有位于OutputFolder下的.txt模型
+        # layout.label(text="ShapeKey Mod")
+
+
+
+
+
+
 
 

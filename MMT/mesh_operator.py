@@ -1,31 +1,25 @@
-# Acknowledgements
-# The original code is mainly forked from @Ian Munsie (darkstarsword@gmail.com)
-# see https://github.com/DarkStarSword/3d-fixes,
-# big thanks to his original blender plugin design.
-# And part of the code is learned from projects below, huge thanks for their great code:
-# - https://github.com/SilentNightSound/GI-Model-Importer
-# - https://github.com/SilentNightSound/SR-Model-Importer
-# - https://github.com/leotorrez/LeoTools
-
 # This mesh_operator.py is only used in right click options.
+import math
 
 from .panel import *
 from .migoto_format import *
 
 
 def remove_unused_vertex_group(self, context):
-    obj = bpy.context.active_object
-    obj.update_from_editmode()
-    vgroup_used = {i: False for i, k in enumerate(obj.vertex_groups)}
+    for obj in bpy.context.selected_objects:
+        if obj.type == "MESH":
+            # obj = bpy.context.active_object
+            obj.update_from_editmode()
+            vgroup_used = {i: False for i, k in enumerate(obj.vertex_groups)}
 
-    for v in obj.data.vertices:
-        for g in v.groups:
-            if g.weight > 0.0:
-                vgroup_used[g.group] = True
+            for v in obj.data.vertices:
+                for g in v.groups:
+                    if g.weight > 0.0:
+                        vgroup_used[g.group] = True
 
-    for i, used in sorted(vgroup_used.items(), reverse=True):
-        if not used:
-            obj.vertex_groups.remove(obj.vertex_groups[i])
+            for i, used in sorted(vgroup_used.items(), reverse=True):
+                if not used:
+                    obj.vertex_groups.remove(obj.vertex_groups[i])
 
     return {'FINISHED'}
 
@@ -42,6 +36,7 @@ def merge_vertex_group_with_same_number(self, context):
     # Author: SilentNightSound#7430
     # Combines vertex groups with the same prefix into one, a fast alternative to the Vertex Weight Mix that works for multiple groups
     # You will likely want to use blender_fill_vg_gaps.txt after this to fill in any gaps caused by merging groups together
+    # Nico: we only need mode 3 here.
 
     import bpy
     import itertools
@@ -52,7 +47,6 @@ def merge_vertex_group_with_same_number(self, context):
     vgroup_names = []
 
     ##### USAGE INSTRUCTIONS
-
     # MODE 1: Runs the merge on a specific list of vertex groups in the selected object(s). Can add more names or fewer to the list - change the names to what you need
     # MODE 2: Runs the merge on a range of vertex groups in the selected object(s). Replace smallest_group_number with the lower bound, and largest_group_number with the upper bound
     # MODE 3 (DEFAULT): Runs the merge on ALL vertex groups in the selected object(s)
@@ -162,6 +156,7 @@ class FillVertexGroupGaps(bpy.types.Operator):
 
 
 def add_bone_from_vertex_group(self, context):
+    # 这玩意实际上没啥用，但是好像又有点用，反正鸡肋，加上吧。
     # 获取当前选中的物体
     selected_object = bpy.context.object
 
@@ -299,6 +294,87 @@ class ConvertToFragmentOperator(bpy.types.Operator):
         return convert_to_fragment(self, context)
 
 
+def delete_loose(self, context):
+    # 获取当前选中的对象
+    selected_objects = bpy.context.selected_objects
+    # 检查是否选中了一个Mesh对象
+    for obj in selected_objects:
+        if obj.type == 'MESH':
+            # 获取选中的网格对象
+            bpy.ops.object.mode_set(mode='EDIT')
+            # 选择所有的顶点
+            bpy.ops.mesh.select_all(action='SELECT')
+            # 执行删除孤立顶点操作
+            bpy.ops.mesh.delete_loose()
+            # 切换回对象模式
+            bpy.ops.object.mode_set(mode='OBJECT')
+    return {'FINISHED'}
+
+
+class MMTDeleteLoose(bpy.types.Operator):
+    bl_idname = "object.mmt_delete_loose"
+    bl_label = "Delete Mesh's Loose Vertex"
+
+    def execute(self, context):
+        return delete_loose(self, context)
+
+
+def mmt_reset_rotation(self, context):
+    for obj in bpy.context.selected_objects:
+        if obj.type == "MESH":
+            # 将旋转角度归零
+            obj.rotation_euler[0] = 0.0  # X轴
+            obj.rotation_euler[1] = 0.0  # Y轴
+            obj.rotation_euler[2] = 0.0  # Z轴
+
+            # 应用旋转变换
+            # bpy.context.view_layer.objects.active = obj
+            # bpy.ops.object.transform_apply(rotation=True)
+    return {'FINISHED'}
+
+
+class MMTResetRotation(bpy.types.Operator):
+    bl_idname = "object.mmt_reset_rotation"
+    bl_label = "Reset x,y,z rotation number to 0 (UE Model)"
+
+    def execute(self, context):
+        return mmt_reset_rotation(self, context)
+
+
+def mmt_cancel_auto_smooth(self, context):
+    for obj in bpy.context.selected_objects:
+        if obj.type == "MESH":
+            # 取消勾选"Auto Smooth"
+            obj.data.use_auto_smooth = False
+    return {'FINISHED'}
+
+
+class MMTCancelAutoSmooth(bpy.types.Operator):
+    bl_idname = "object.mmt_cancel_auto_smooth"
+    bl_label = "Cancel Auto Smooth for NORMAL (UE Model)"
+
+    def execute(self, context):
+        return mmt_cancel_auto_smooth(self, context)
+
+
+def mmt_set_auto_smooth_89(self, context):
+    for obj in bpy.context.selected_objects:
+        if obj.type == "MESH":
+            # 取消勾选"Auto Smooth"
+            obj.data.use_auto_smooth = True
+            obj.data.auto_smooth_angle = math.radians(89)
+    return {'FINISHED'}
+
+
+class MMTSetAutoSmooth89(bpy.types.Operator):
+    bl_idname = "object.mmt_set_auto_smooth_89"
+    bl_label = "Set Auto Smooth to 89° (Unity)"
+
+    def execute(self, context):
+        return mmt_set_auto_smooth_89(self, context)
+
+
+# -----------------------------------这个属于右键菜单注册，单独的函数要往上面放---------------------------------------
 class MigotoRightClickMenu(bpy.types.Menu):
     bl_idname = "VIEW3D_MT_object_3Dmigoto"
     bl_label = "3Dmigoto"
@@ -311,6 +387,10 @@ class MigotoRightClickMenu(bpy.types.Menu):
         layout.operator("object.add_bone_from_vertex_group")
         layout.operator("object.remove_not_number_vertex_group")
         layout.operator("object.convert_to_fragment")
+        layout.operator("object.mmt_delete_loose")
+        layout.operator("object.mmt_reset_rotation")
+        layout.operator("object.mmt_cancel_auto_smooth")
+        layout.operator("object.mmt_set_auto_smooth_89")
 
 
 # 定义菜单项的注册函数
@@ -318,6 +398,7 @@ def menu_func_migoto_right_click(self, context):
     self.layout.menu(MigotoRightClickMenu.bl_idname)
 
 
+# -----------------------------------下面这两个不属于右键菜单，属于MMT面板，所以放到最下面---------------------------------------
 class MMTImportAllTextModel(bpy.types.Operator):
     bl_idname = "mmt.import_all"
     bl_label = "Import all txt model from current OutputFolder"
@@ -385,22 +466,14 @@ class MMTExportAllIBVBModel(bpy.types.Operator):
         # 首先根据MMT路径，获取
         mmt_path = bpy.context.scene.mmt_props.path
         current_game = ""
-        main_setting_path = os.path.join(context.scene.mmt_props.path, "Configs\\wheel_setting\\MainSetting.json")
+        main_setting_path = os.path.join(context.scene.mmt_props.path, "Configs\\Main.json")
         if os.path.exists(main_setting_path):
             main_setting_file = open(main_setting_path)
             main_setting_json = json.load(main_setting_file)
             main_setting_file.close()
             current_game = main_setting_json["GameName"]
 
-
-        output_folder_path = ""
-        game_setting_path = os.path.join(context.scene.mmt_props.path, "Configs\\wheel_setting\\GameSetting.json")
-        if os.path.exists(game_setting_path):
-            game_setting_file = open(game_setting_path)
-            game_setting_json = json.load(game_setting_file)
-            game_setting_file.close()
-            output_folder_path = str(game_setting_json[current_game + "_Dev"]["OutputFolder"]).replace("/", "\\")
-
+        output_folder_path = mmt_path + "Games\\" + current_game + "\\3Dmigoto\\Mods\\output\\"
         # 创建 Export3DMigoto 类的实例对象
 
 
@@ -419,9 +492,11 @@ class MMTExportAllIBVBModel(bpy.types.Operator):
 
                 # 处理当前网格对象
                 # 例如，打印网格名称
+
                 name_splits = str(mesh.name).split("-")
                 draw_ib = name_splits[0]
                 draw_index = name_splits[1]
+                draw_index = draw_index[0:len(draw_index) - 3]
 
                 # 设置类属性的值
                 vb_path = output_folder_path + draw_ib + "\\" + draw_index + ".vb"

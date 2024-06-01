@@ -1,0 +1,66 @@
+def remove_not_number_vertex_group(self, context):
+    for obj in bpy.context.selected_objects:
+        for vg in reversed(obj.vertex_groups):
+            if vg.name.isdecimal():
+                continue
+            # print('Removing vertex group', vg.name)
+            obj.vertex_groups.remove(vg)
+    return {'FINISHED'}
+
+
+class RemoveNotNumberVertexGroup(bpy.types.Operator):
+    bl_idname = "object.remove_not_number_vertex_group"
+    bl_label = "Remove Not Number Vertex Group"
+
+    def execute(self, context):
+        return remove_not_number_vertex_group(self, context)
+
+
+1.首先参考上面的格式，改一下定义的函数名，以及函数里对应的操作，以及类名。
+2.注册是在mesh_operator.py里：
+class MigotoRightClickMenu(bpy.types.Menu):
+    bl_idname = "VIEW3D_MT_object_3Dmigoto"
+    bl_label = "3Dmigoto"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator("object.remove_unused_vertex_group")
+        layout.operator("object.merge_vertex_group_with_same_number")
+        layout.operator("object.fill_vertex_group_gaps")
+        layout.operator("object.add_bone_from_vertex_group")
+        layout.operator("object.remove_not_number_vertex_group")
+        layout.operator("object.convert_to_fragment")
+
+在后面追加一个刚才创建的Operator就好了
+3.在__init__py里添加这个class的注册，参考如下
+register_classes = (
+    # migoto_format
+    MMTPathProperties,
+    MMTPathOperator,
+    MMTPanel,
+
+    #
+    Import3DMigotoFrameAnalysis,
+    Import3DMigotoRaw,
+    Import3DMigotoReferenceInputFormat,
+    Export3DMigoto,
+
+    # mesh_operator
+    RemoveUnusedVertexGroupOperator,
+    MergeVertexGroupsWithSameNumber,
+    FillVertexGroupGaps,
+    AddBoneFromVertexGroup,
+    RemoveNotNumberVertexGroup,
+    ConvertToFragmentOperator,
+    MMTDeleteLoose,
+    MigotoRightClickMenu,
+
+    # MMT的一键导入导出
+    MMTImportAllTextModel,
+    MMTExportAllIBVBModel
+)
+
+
+
+
+

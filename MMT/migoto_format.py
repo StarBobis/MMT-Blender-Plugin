@@ -1,17 +1,8 @@
-# Acknowledgements
-# The original code is mainly forked from @Ian Munsie (darkstarsword@gmail.com)
-# see https://github.com/DarkStarSword/3d-fixes,
-# big thanks to his original blender plugin design.
-# And part of the code is learned from projects below, huge thanks for their great code:
-# - https://github.com/SilentNightSound/GI-Model-Importer
-# - https://github.com/SilentNightSound/SR-Model-Importer
-# - https://github.com/leotorrez/LeoTools
-
 # This migoto_format.py is only used in 3dmigoto import and export options.
 
 from .panel import *
 
-# TODO Strange design again, wtf is this?
+# 这里使用type关键字创建了一个类，类名是DummyIOOBJOrientationHelper，(object,)表示继承自object对象，{}表示没定义属性和方法
 IOOBJOrientationHelper = type('DummyIOOBJOrientationHelper', (object,), {})
 
 # Constants
@@ -20,7 +11,6 @@ vertex_color_layer_channels = 4
 # TODO we don't need any old version compatible, remove these in later version.
 def set_active_object(context, obj):
     context.view_layer.objects.active = obj  # the 2.8 way
-
 
 def get_active_object(context):
     return context.view_layer.objects.active
@@ -131,11 +121,14 @@ def format_size(fmt):
 
 # TODO why the parameter is an object type instead of bpy.types.Operator or specific type??
 class InputLayoutElement(object):
-    '''
-    This class seems used to parse -ib and -vb0.txt
-    but it's really hard to understand, why use strange feature in python?
-    we use python is because it's easy, don't make it hard to understand.
-    '''
+    SemanticName = ""
+    SemanticIndex = ""
+    Format = ""
+    InputSlot = ""
+    AlignedByteOffset = ""
+    InputSlotClass = ""
+    InstanceDataStepRate = ""
+
     def __init__(self, arg):
         if isinstance(arg, io.IOBase):
             self.from_file(arg)
@@ -157,14 +150,9 @@ class InputLayoutElement(object):
         self.InstanceDataStepRate = int(self.next_validate(f, 'InstanceDataStepRate'))
 
     def to_dict(self):
-        d = {}
-        d['SemanticName'] = self.SemanticName
-        d['SemanticIndex'] = self.SemanticIndex
-        d['Format'] = self.Format
-        d['InputSlot'] = self.InputSlot
-        d['AlignedByteOffset'] = self.AlignedByteOffset
-        d['InputSlotClass'] = self.InputSlotClass
-        d['InstanceDataStepRate'] = self.InstanceDataStepRate
+        d = {'SemanticName': self.SemanticName, 'SemanticIndex': self.SemanticIndex, 'Format': self.Format,
+             'InputSlot': self.InputSlot, 'AlignedByteOffset': self.AlignedByteOffset,
+             'InputSlotClass': self.InputSlotClass, 'InstanceDataStepRate': self.InstanceDataStepRate}
         return d
 
     def to_string(self, indent=2):
@@ -208,9 +196,17 @@ class InputLayoutElement(object):
         return self.SemanticName
 
     def pad(self, data, val):
+
         padding = format_components(self.Format) - len(data)
         assert (padding >= 0)
         return data + [val] * padding
+
+        # 这里SinsOfSeven做了改进：https://github.com/DarkStarSword/3d-fixes/issues/32
+        # 但是3.6.8LTS测试无法使用
+        # padding = self.format_len - len(data)
+        # assert (padding >= 0)
+        # data.extend([val] * padding)
+        # return data
 
     def clip(self, data):
         return data[:format_components(self.Format)]
@@ -609,12 +605,13 @@ def import_normals_step1(mesh, data):
     # XXX: Assertion triggers in DOA6
 
     # Nico: 这里normal的第四个值如果不是0.0，那就直接报错
-    if len(data[0]) == 4:
+    # 这里直接忽略第四个值就行了，到时候再补上
+    # if len(data[0]) == 4:
         # TODO why use List Comprehension here? it's really hard to read.
         # TODO Blender不支持4D normal，而UE4 Normal的的第四个分量一般情况下是1，可以忽略后导入
         #  而BINORMAL第四个分量不是1就是-1，这时第四个分量代表手性信息，需要根据是否为-1进行向量翻转。
-        if [x[3] for x in data] != [0.0] * len(data):
-            raise Fatal('Normals are 4D')
+        # if [x[3] for x in data] != [0.0] * len(data):
+        #     raise Fatal('Normals are 4D')
     normals = [(x[0], x[1], x[2]) for x in data]
 
     # To make sure the normals don't get lost by Blender's edit mode,
@@ -629,8 +626,7 @@ def import_normals_step1(mesh, data):
     # Comment from other import scripts:
     # Note: we store 'temp' normals in loops, since validate() may alter final mesh,
     #       we can only set custom lnors *after* calling it.
-    # Nico: 这里使用blender自带的方法计算normal值，所有有可能和D3D11中所需NORMAl值对不上
-    # 但是这里是导入，所以转换成Blender所需法线也是可以理解的。
+
     mesh.create_normals_split()
     for l in mesh.loops:
         l.normal[:] = normals[l.vertex_index]
