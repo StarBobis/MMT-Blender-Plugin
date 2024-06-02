@@ -497,6 +497,8 @@ class MMTExportAllIBVBModel(bpy.types.Operator):
                 draw_ib = name_splits[0]
                 draw_index = name_splits[1]
                 draw_index = draw_index[0:len(draw_index) - 3]
+                if draw_index.endswith(".vb."):
+                    draw_index = draw_index[0:len(draw_index) - 4]
 
                 # 设置类属性的值
                 vb_path = output_folder_path + draw_ib + "\\" + draw_index + ".vb"
