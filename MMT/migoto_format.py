@@ -1,4 +1,5 @@
 # This migoto_format.py is only used in 3dmigoto import and export options.
+import bpy
 
 from .panel import *
 
@@ -208,6 +209,7 @@ class InputLayoutElement(object):
         # data.extend([val] * padding)
         # return data
 
+
     def clip(self, data):
         return data[:format_components(self.Format)]
 
@@ -293,10 +295,13 @@ class InputLayout(object):
 # TODO this is a crazy design, why you need a Hashable dict?
 #  why don't use a class to desing a new data structure so it will be more readable?
 class HashableVertex(dict):
+
+    # 原始的Hash计算方法，在如果具有多个UV的情况下会生成多个TANGENT值，从而导致生成的顶点数量多余原本模型的顶点数量
     def __hash__(self):
         # Convert keys and values into immutable types that can be hashed
         immutable = tuple((k, tuple(v)) for k, v in sorted(self.items()))
         return hash(immutable)
+
 
 
 class VertexBuffer(object):
@@ -963,6 +968,7 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
                                     [mesh.vertex_colors[elem.name + '.A'].data[blender_loop_vertex.index].color[0]]
         elif elem.name == 'NORMAL':
             vertex[elem.name] = elem.pad(list(blender_loop_vertex.normal), 0.0)
+
         elif elem.name.startswith('TANGENT'):
             # DOAXVV has +1/-1 in the 4th component. Not positive what this is,
             # but guessing maybe the bitangent sign? Not even sure it is used...
@@ -1082,18 +1088,29 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
     # completely blow this out - we still want to reuse identical vertices
     # via the index buffer. There might be a convenience function in
     # Blender to do this, but it's easy enough to do this ourselves
+
+    # 这里有一个严重的问题，当存在TANGENT属性时，一个顶点会带有多个TANGENT从而导致导出的顶点数量增多34个，但是目前不知道原因在哪里
     indexed_vertices = collections.OrderedDict()
+    calcNumber = 0
     for poly in mesh.polygons:
         face = []
         for blender_lvertex in mesh.loops[poly.loop_start:poly.loop_start + poly.loop_total]:
             vertex = blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_lvertex, layout, texcoord_layers)
+            # 首先将当前顶点计算为Hash后的顶点然后如果该计算后的Hash顶点不存在，则插入到indexed_vertices里
+            # 随后将该顶点添加到face[]里，索引为该顶点在字典里的索引
             face.append(indexed_vertices.setdefault(HashableVertex(vertex), len(indexed_vertices)))
+            calcNumber = calcNumber + 1
         if ib is not None:
             ib.append(face)
+    operator.report({'INFO'}, "calc number: " + str(calcNumber))
 
     vb = VertexBuffer(layout=layout)
+    appendNumber = 0
     for vertex in indexed_vertices:
         vb.append(vertex)
+        appendNumber = appendNumber + 1
+    # 这里使用了TANGENT后是9326    不使用TANGENT是9309
+    operator.report({'INFO'}, "append number" + str(appendNumber))
 
     vgmaps = {k[15:]: keys_to_ints(v) for k, v in obj.items() if k.startswith('3DMigoto:VGMap:')}
 

@@ -13,7 +13,7 @@ from .animation_operator import *
 bl_info = {
     "name": "MMT-Community Blender Plugin",
     "author": "NicoMico",
-    "description": "Special fork version of DarkStarSword's blender_3dmigoto.py",
+    "description": "Special fork version of DarkStarSword's FallingTs_blender_3dmigoto.py",
     "blender": (3, 6, 8),
     "version": (1, 0, 0, 8),
     "location": "View3D",
@@ -65,9 +65,11 @@ def register():
     bpy.types.Scene.mmt_props = bpy.props.PointerProperty(type=MMTPathProperties)
 
     # migoto_format
-    bpy.types.TOPBAR_MT_file_import.append(menu_func_import_fa)
-    bpy.types.TOPBAR_MT_file_import.append(menu_func_import_raw)
-    bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
+    # Nico: 不需要从Import里点击了，太麻烦了，直接从我们的Panel里点击
+    # 而且这样的话不会和其它人的脚本冲突
+    # bpy.types.TOPBAR_MT_file_import.append(menu_func_import_fa)
+    # bpy.types.TOPBAR_MT_file_import.append(menu_func_import_raw)
+    # bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
 
     # mesh_operator
     bpy.types.VIEW3D_MT_object_context_menu.append(menu_func_migoto_right_click)
@@ -88,9 +90,9 @@ def unregister():
     del bpy.types.Scene.mmt_props
 
     # migoto_format
-    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_fa)
-    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_raw)
-    bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
+    # bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_fa)
+    # bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_raw)
+    # bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
 
     # mesh_operator
     bpy.types.VIEW3D_MT_object_context_menu.remove(menu_func_migoto_right_click)

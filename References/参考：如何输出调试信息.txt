@@ -2,3 +2,6 @@ Blender插件中普通的Print是不会生效的
 在execute方法里可以像这样调用调试信息，有INFO, ERROR等等
 self.report({'INFO'}, "test：" + str(paths))
 self.report({'INFO'}, "test")
+
+或者使用operator来report
+operator.report({'INFO'}, str(appendNumber))
