@@ -292,15 +292,23 @@ class InputLayout(object):
         return self.elems == other.elems
 
 
-# TODO 这个HashAble会导致
 class HashableVertex(dict):
+    # 旧的代码注释掉了，不过不删，留着用于参考防止忘记原本的设计
+    # def __hash__(self):
+    #     # Convert keys and values into immutable types that can be hashed
+    #     immutable = tuple((k, tuple(v)) for k, v in sorted(self.items()))
+    #     return hash(immutable)
+
     def __hash__(self):
-        # Convert keys and values into immutable types that can be hashed
-        immutable = tuple((k, tuple(v)) for k, v in sorted(self.items()))
+        # 这里将步骤拆分开来，更易于理解
+        immutable_items = []
+        for k, v in self.items():
+            tuple_v = tuple(v)
+            pair = (k, tuple_v)
+            immutable_items.append(pair)
+        sorted_items = sorted(immutable_items)
+        immutable = tuple(sorted_items)
         return hash(immutable)
-
-
-
 
 
 class VertexBuffer(object):
@@ -605,15 +613,12 @@ def load_3dmigoto_mesh(operator, paths):
 
 
 def import_normals_step1(mesh, data):
-    # Ensure normals are 3-dimensional:
-    # XXX: Assertion triggers in DOA6
-
-    # Nico: 这里normal的第四个值如果不是0.0，那就直接报错
-    # 这里直接忽略第四个值就行了，到时候再补上
+    # Nico:
+    # Blender不支持4D normal，而UE4 Normal的的第四个分量一般情况下是1，可以忽略后导入
+    # 而BINORMAL第四个分量不是1就是-1，这时第四个分量代表手性信息，需要根据是否为-1进行向量翻转。
+    # 不过暂时没有发现BINORMAL，现代引擎一般都用不上BINORMAL了，所以我们这里不再考虑兼容
+    # 这里直接忽略第四个值，无需多余判断，如果真有游戏是4D的Position那到时候再研究
     # if len(data[0]) == 4:
-        # TODO why use List Comprehension here? it's really hard to read.
-        # TODO Blender不支持4D normal，而UE4 Normal的的第四个分量一般情况下是1，可以忽略后导入
-        #  而BINORMAL第四个分量不是1就是-1，这时第四个分量代表手性信息，需要根据是否为-1进行向量翻转。
         # if [x[3] for x in data] != [0.0] * len(data):
         #     raise Fatal('Normals are 4D')
     normals = [(x[0], x[1], x[2]) for x in data]
@@ -644,9 +649,10 @@ def import_normals_step2(mesh):
     # Not sure this is still required with use_auto_smooth, but the other
     # importers do it, and at the very least it shouldn't hurt...
     mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
-
     mesh.normals_split_custom_set(tuple(zip(*(iter(clnors),) * 3)))
     mesh.use_auto_smooth = True
+
+    # Nico: 这里我看过了，我们并不需要在导入时默认显示锐边，如果确实需要用到的话自己在选项里开启，而不是作为通用步骤执行。
     # This has a double meaning, one of which is to use the custom normals
     # XXX CHECKME: show_edge_sharp moved in 2.80, but I can't actually
     # recall what it does and have a feeling it was unimportant:
@@ -724,7 +730,12 @@ def import_uv_layers(mesh, obj, texcoords, flip_texcoord_v):
                 blender_uvs.data[l.index].uv = flip_uv(uvs[l.vertex_index])
 
 
-# TODO We don't need this ,remove it later.
+# TODO VertexLayer的设计应该被去除
+'''
+Nico:
+在游戏Mod制作中，所有提取的属性和生成的属性都是应该提前规划好的，
+而不是在这里做额外的无用步骤来传递一些垃圾属性。
+'''
 # This loads unknown data from the vertex buffers as vertex layers
 def import_vertex_layers(mesh, obj, vertex_layers):
     for (element_name, data) in sorted(vertex_layers.items()):
@@ -765,6 +776,7 @@ def import_faces_from_ib(mesh, ib):
     mesh.polygons.foreach_set('loop_total', [3] * len(ib.faces))
 
 
+# Nico: 这玩意基本上用不到吧，没有IB的情况下要怎么做到自动生成顶点索引呢？这样生成出来真的和游戏里替换所需要的格式一样吗？
 def import_faces_from_vb(mesh, vb):
     # Only lightly tested
     num_faces = len(vb.vertices) // 3
@@ -811,10 +823,12 @@ def import_vertices(mesh, vb):
                     # (i.e. divide XYZ by W), but that might be assuming too
                     # much for a generic script.
                     raise Fatal('Positions are 4D')
+
+                    # Nico: Blender暂时不支持4D索引，加了也没用，直接不行就报错，转人工处理。
                     # Occurs in some meshes in DOA6, such as skirts.
                     # W coordinate must be preserved in these cases.
-                    print('Positions are 4D, storing W coordinate in POSITION.w vertex layer')
-                    vertex_layers['POSITION.w'] = [[x[3]] for x in data]
+                    # print('Positions are 4D, storing W coordinate in POSITION.w vertex layer')
+                    # vertex_layers['POSITION.w'] = [[x[3]] for x in data]
             positions = [(x[0], x[1], x[2]) for x in data]
             mesh.vertices.foreach_set('co', unpack_list(positions))
         elif elem.name.startswith('COLOR'):
@@ -865,10 +879,9 @@ def import_3dmigoto(operator, context, paths, merge_meshes=False, **kwargs):
         for p in paths:
             try:
                 obj.append(import_3dmigoto_vb_ib(operator, context, [p], **kwargs))
-
             except Fatal as e:
                 operator.report({'ERROR'}, str(e) + ': ' + str(p[:2]))
-        # FIXME: Group objects together
+        # FIXME: Group objects together  (Nico:这里他的意思应该是导入后自动放入一个集合里)
         return obj
 
 
@@ -949,9 +962,11 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
     vertex_groups = sorted(blender_vertex.groups, key=lambda x: x.weight, reverse=True)
 
     for elem in layout:
+        # 只处理per-vertex的
         if elem.InputSlotClass != 'per-vertex':
             continue
 
+        # 用于跳过在同一个顶点上重复元素的处理，这个代码真的会被执行到吗？看起来永远不会触发。
         if (elem.InputSlot, elem.AlignedByteOffset) in seen_offsets:
             continue
         seen_offsets.add((elem.InputSlot, elem.AlignedByteOffset))
@@ -967,26 +982,11 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
                                     [mesh.vertex_colors[elem.name + '.A'].data[blender_loop_vertex.index].color[0]]
         elif elem.name == 'NORMAL':
             vertex[elem.name] = elem.pad(list(blender_loop_vertex.normal), 0.0)
-
         elif elem.name.startswith('TANGENT'):
             # DOAXVV has +1/-1 in the 4th component. Not positive what this is,
             # but guessing maybe the bitangent sign? Not even sure it is used...
             # FIXME: Other games
             vertex[elem.name] = elem.pad(list(blender_loop_vertex.tangent), blender_loop_vertex.bitangent_sign)
-        elif elem.name.startswith('BINORMAL'):
-            # Some DOA6 meshes (skirts) use BINORMAL, but I'm not certain it is
-            # actually the binormal. These meshes are weird though, since they
-            # use 4 dimensional positions and normals, so they aren't something
-            # we can really deal with at all. Therefore, the below is untested,
-            # FIXME: So find a mesh where this is actually the binormal,
-            # uncomment the below code and test.
-            # normal = blender_loop_vertex.normal
-            # tangent = blender_loop_vertex.tangent
-            # binormal = numpy.cross(normal, tangent)
-            # XXX: Does the binormal need to be normalised to a unit vector?
-            # binormal = binormal / numpy.linalg.norm(binormal)
-            # vertex[elem.name] = elem.pad(list(binormal), 0.0)
-            pass
         elif elem.name.startswith('BLENDINDICES'):
             i = elem.SemanticIndex * 4
             vertex[elem.name] = elem.pad([x.group for x in vertex_groups[i:i + 4]], 0)
@@ -1001,6 +1001,22 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
                 if uv_name in texcoords:
                     uvs += list(texcoords[uv_name][blender_loop_vertex.index])
             vertex[elem.name] = uvs
+
+        # Nico: 不需要考虑BINORMAL，现代游戏的渲染基本上不会使用BINORMAL这种过时的渲染方案
+        # elif elem.name.startswith('BINORMAL'):
+            # Some DOA6 meshes (skirts) use BINORMAL, but I'm not certain it is
+            # actually the binormal. These meshes are weird though, since they
+            # use 4 dimensional positions and normals, so they aren't something
+            # we can really deal with at all. Therefore, the below is untested,
+            # FIXME: So find a mesh where this is actually the binormal,
+            # uncomment the below code and test.
+            # normal = blender_loop_vertex.normal
+            # tangent = blender_loop_vertex.tangent
+            # binormal = numpy.cross(normal, tangent)
+            # XXX: Does the binormal need to be normalised to a unit vector?
+            # binormal = binormal / numpy.linalg.norm(binormal)
+            # vertex[elem.name] = elem.pad(list(binormal), 0.0)
+            # pass
 
         else:
             # Unhandled semantics are saved in vertex layers
@@ -1103,14 +1119,23 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
     # 先输出看一下这里的顶点数量为多少，经过测试确实是原本的顶点数量
     operator.report({'INFO'}, "mesh.vertices: " + str(mesh.vertices))
 
+    '''
+    Nico:
+    顶点转换为3dmigoto类型的顶点再经过hashable后，如果存在TANGENT则会导致数量变多，不存在则不会导致数量变多。
+    '''
     calcNumber = 0
     for poly in mesh.polygons:
         face = []
         for blender_lvertex in mesh.loops[poly.loop_start:poly.loop_start + poly.loop_total]:
+            # Nico: 初始的Vertex即使是经过TANGENT计算，数量也是和原来一样的
+            # 但是这里使用了blender_lvertex导致了生成的HashableVertex不一样，因为其它都是固定的只有这个blender_lvertex会改变
+            # 也许应该参考Blender官方文档来进一步学习blender_lvertex具体作用以及继续研究blender_vertex_to_3dmigoto_vertex函数
+            # 搞清楚为什么这个会导致Hash计算不重复，需要注意的是如果不计算TANGENT或者没有TANGENT属性时不会额外生成顶点
             vertex = blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_lvertex, layout, texcoord_layers)
             # 首先将当前顶点计算为Hash后的顶点然后如果该计算后的Hash顶点不存在，则插入到indexed_vertices里
             # 随后将该顶点添加到face[]里，索引为该顶点在字典里的索引
 
+            # TODO 这里使用最简单的截断，但是会导致部分顶点索引丢失，导致部分模型缺失，以后再来解决吧，只是作为临时方案使用
             if len(indexed_vertices) < len(mesh.vertices):
                 indexed_vertex = indexed_vertices.setdefault(HashableVertex(vertex), len(indexed_vertices))
                 # indexed_vertex = indexed_vertices[HashableVertex(vertex)] = len(indexed_vertices)
@@ -1119,25 +1144,18 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
 
         if ib is not None:
             ib.append(face)
+
     operator.report({'INFO'}, "IB Append Number: " + str(calcNumber))
     operator.report({'INFO'}, "indexed_vertices: " + str(len(indexed_vertices)))
     operator.report({'INFO'}, "IB number : " + str(len(ib)))
 
-
     vb = VertexBuffer(layout=layout)
-
-    '''
-    Nico:
-    顶点转换为3dmigoto类型的顶点再经过hashable后，如果存在TANGENT则会导致数量变多，不存在则不会导致数量变多。
-    
-    '''
-
     vbAppendNumber = 0
     # for vertex in indexed_vertices:
     for vertex in indexed_vertices:
         vb.append(vertex)
         vbAppendNumber = vbAppendNumber + 1
-    operator.report({'INFO'}, "append number" + str(vbAppendNumber))
+    operator.report({'INFO'}, "Export Vertex Number: " + str(vbAppendNumber))
 
     vgmaps = {k[15:]: keys_to_ints(v) for k, v in obj.items() if k.startswith('3DMigoto:VGMap:')}
 
@@ -1488,38 +1506,14 @@ def apply_vgmap(operator, context, targets=None, filepath='', commit=False, reve
             operator.report({'INFO'}, 'Applied vgmap to %s' % obj.name)
 
 
-def update_vgmap(operator, context, vg_step=1):
-    if not context.selected_objects:
-        raise Fatal('No object selected')
-
-    for obj in context.selected_objects:
-        vgmaps = {k: keys_to_ints(v) for k, v in obj.items() if k.startswith('3DMigoto:VGMap:')}
-        if not vgmaps:
-            raise Fatal('Selected object has no 3DMigoto vertex group maps')
-        for (suffix, vgmap) in vgmaps.items():
-            highest = max(vgmap.values())
-            for vg in obj.vertex_groups.keys():
-                if vg.isdecimal():
-                    continue
-                if vg in vgmap:
-                    continue
-                highest += vg_step
-                vgmap[vg] = highest
-                operator.report({'INFO'}, 'Assigned named vertex group %s = %i' % (vg, vgmap[vg]))
-            obj[suffix] = vgmap
-
-
-
 # -----------------------------Menu Function define-------------------------------------
-
-
 def menu_func_import_fa(self, context):
-    self.layout.operator(Import3DMigotoFrameAnalysis.bl_idname, text="3DMigoto FrameAnalysis dump (ib.txt + vb0.txt)")
+    self.layout.operator(Import3DMigotoFrameAnalysis.bl_idname, text="3DMigoto FrameAnalysis dump (ib.txt + vb0.txt) (MMT)")
 
 
 def menu_func_import_raw(self, context):
-    self.layout.operator(Import3DMigotoRaw.bl_idname, text="3DMigoto raw buffers (.vb + .ib)")
+    self.layout.operator(Import3DMigotoRaw.bl_idname, text="3DMigoto raw buffers (.vb + .ib) (MMT)")
 
 
 def menu_func_export(self, context):
-    self.layout.operator(Export3DMigoto.bl_idname, text="3DMigoto raw buffers (.vb + .ib)")
+    self.layout.operator(Export3DMigoto.bl_idname, text="3DMigoto raw buffers (.vb + .ib) (MMT)")

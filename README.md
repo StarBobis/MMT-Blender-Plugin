@@ -27,6 +27,10 @@ Extra modules:
 - Fake bpy: https://github.com/nutti/fake-bpy-module (pip install fake-bpy-module-4.0 or pip install fake-bpy-module-3.6)
 - Numpy: pip install numpy
 
+Notice: commit code back to this repo need to follow a core rule: code need to be easy to read more than execute speed.
+Python is not design to execute fast,but designed to let people work together and make life easier,
+not a language for you to show your programming skills or try to use unusual feature to kill other programmer's valuable time.
+
 # LICENSE
 This project use GNU3 as main LICENSE,and MPL-2.0 as backup, you can use one of them.
 - GNU GENERAL PUBLIC LICENSE Version 3
