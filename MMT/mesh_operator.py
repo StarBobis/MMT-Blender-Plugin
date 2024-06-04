@@ -510,8 +510,8 @@ class MMTExportAllIBVBModel(bpy.types.Operator):
                 # FIXME: ExportHelper will check for overwriting vb_path, but not ib_path
 
                 # Nico: now we use falling-ts 's solution to not change vertex group.
-                export_3dmigoto_without_position_increase(self, context, vb_path, ib_path, fmt_path)
-                # export_3dmigoto(self, context, vb_path, ib_path, fmt_path)
+                # export_3dmigoto_without_position_increase(self, context, vb_path, ib_path, fmt_path)
+                export_3dmigoto(self, context, vb_path, ib_path, fmt_path)
 
         self.report({'INFO'}, "Export Success!")
         return {'FINISHED'}
