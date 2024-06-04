@@ -2,6 +2,8 @@
 Special version of 3Dmigoto blender plugin originally forked from https://github.com/DarkStarSword/3d-fixes.
 And modify some code to better meets our needs, mainly developed for MMT-Community(MigotoModTool).
 
+Currently Support Blender Version : Blender 3.6LTS
+
 # Notice
 1,These scripts is just developed for fun and keep changing with time, so there will not be a released version of it.
 
