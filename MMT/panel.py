@@ -133,15 +133,15 @@ class MMTPanel(bpy.types.Panel):
         layout.label(text="Seperate import&export in OutputFolder")
 
         # 快速导入，点这个之后默认路径为OutputFolder，这样直接就能去导入不用翻很久文件夹找路径了
-        operator_import_txt = self.layout.operator("import_mesh.migoto_frame_analysis", text="Import .txt models ")
+        operator_import_txt = self.layout.operator("import_mesh.migoto_frame_analysis_mmt", text="Import .txt models ")
         operator_import_txt.directory = output_folder_path
 
         # 新增快速导入buf文件
-        operator_import_ib_vb = self.layout.operator("import_mesh.migoto_raw_buffers", text="Import .ib & .vb models ")
+        operator_import_ib_vb = self.layout.operator("import_mesh.migoto_raw_buffers_mmt", text="Import .ib & .vb models ")
         operator_import_ib_vb.filepath = output_folder_path
 
         # 快速导出同理，点这个之后默认路径为OutputFolder，这样直接就能去导出不用翻很久文件夹找路径了
-        operator_export_ibvb = self.layout.operator("export_mesh.migoto", text="Export .ib & .vb files ")
+        operator_export_ibvb = self.layout.operator("export_mesh.migoto_mmt", text="Export .ib & .vb files ")
         operator_export_ibvb.filepath = output_folder_path + "1.vb"
 
         # 添加分隔符

@@ -292,15 +292,14 @@ class InputLayout(object):
         return self.elems == other.elems
 
 
-# TODO this is a crazy design, why you need a Hashable dict?
-#  why don't use a class to desing a new data structure so it will be more readable?
+# TODO 这个HashAble会导致
 class HashableVertex(dict):
-
-    # 原始的Hash计算方法，在如果具有多个UV的情况下会生成多个TANGENT值，从而导致生成的顶点数量多余原本模型的顶点数量
     def __hash__(self):
         # Convert keys and values into immutable types that can be hashed
         immutable = tuple((k, tuple(v)) for k, v in sorted(self.items()))
         return hash(immutable)
+
+
 
 
 
@@ -1002,6 +1001,7 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
                 if uv_name in texcoords:
                     uvs += list(texcoords[uv_name][blender_loop_vertex.index])
             vertex[elem.name] = uvs
+
         else:
             # Unhandled semantics are saved in vertex layers
             data = []
@@ -1032,27 +1032,35 @@ def write_fmt_file(f, vb, ib):
 
 
 def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
+    # 获取当前场景中的obj对象
     obj = context.object
 
+    # 为空时不导出
     if obj is None:
         raise Fatal('No object selected')
 
     stride = obj['3DMigoto:VBStride']
     layout = InputLayout(obj['3DMigoto:VBLayout'], stride=stride)
+
+    # 获取Mesh
     if hasattr(context, "evaluated_depsgraph_get"):  # 2.80
         mesh = obj.evaluated_get(context.evaluated_depsgraph_get()).to_mesh()
     else:  # 2.79
         mesh = obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
+
+    # 使用bmesh复制出一个新mesh并三角化
     mesh_triangulate(mesh)
 
+    # 获取所有索引
     indices = [l.vertex_index for l in mesh.loops]
+    # 获取所有顶点
     faces = [indices[i:i + 3] for i in range(0, len(indices), 3)]
+
     try:
         if obj['3DMigoto:IBFormat'] == "DXGI_FORMAT_R16_UINT":
             ib_format = "DXGI_FORMAT_R32_UINT"
         else:
             ib_format = obj['3DMigoto:IBFormat']
-
     except KeyError:
         ib = None
         raise Fatal('FIXME: Add capability to export without an index buffer')
@@ -1061,8 +1069,10 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
 
     # Calculates tangents and makes loop normals valid (still with our
     # custom normal data from import time):
+    # 这一步如果存在TANGENT属性则会导致顶点数量增加
     mesh.calc_tangents()
 
+    # 拼凑texcoord层级，有几个UVMap就拼出几个来
     texcoord_layers = {}
     for uv_layer in mesh.uv_layers:
         texcoords = {}
@@ -1088,9 +1098,11 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
     # completely blow this out - we still want to reuse identical vertices
     # via the index buffer. There might be a convenience function in
     # Blender to do this, but it's easy enough to do this ourselves
-
-    # 这里有一个严重的问题，当存在TANGENT属性时，一个顶点会带有多个TANGENT从而导致导出的顶点数量增多34个，但是目前不知道原因在哪里
     indexed_vertices = collections.OrderedDict()
+
+    # 先输出看一下这里的顶点数量为多少，经过测试确实是原本的顶点数量
+    operator.report({'INFO'}, "mesh.vertices: " + str(mesh.vertices))
+
     calcNumber = 0
     for poly in mesh.polygons:
         face = []
@@ -1098,19 +1110,34 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
             vertex = blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_lvertex, layout, texcoord_layers)
             # 首先将当前顶点计算为Hash后的顶点然后如果该计算后的Hash顶点不存在，则插入到indexed_vertices里
             # 随后将该顶点添加到face[]里，索引为该顶点在字典里的索引
-            face.append(indexed_vertices.setdefault(HashableVertex(vertex), len(indexed_vertices)))
-            calcNumber = calcNumber + 1
+
+            if len(indexed_vertices) < len(mesh.vertices):
+                indexed_vertex = indexed_vertices.setdefault(HashableVertex(vertex), len(indexed_vertices))
+                # indexed_vertex = indexed_vertices[HashableVertex(vertex)] = len(indexed_vertices)
+                face.append(indexed_vertex)
+                calcNumber = calcNumber + 1
+
         if ib is not None:
             ib.append(face)
-    operator.report({'INFO'}, "calc number: " + str(calcNumber))
+    operator.report({'INFO'}, "IB Append Number: " + str(calcNumber))
+    operator.report({'INFO'}, "indexed_vertices: " + str(len(indexed_vertices)))
+    operator.report({'INFO'}, "IB number : " + str(len(ib)))
+
 
     vb = VertexBuffer(layout=layout)
-    appendNumber = 0
+
+    '''
+    Nico:
+    顶点转换为3dmigoto类型的顶点再经过hashable后，如果存在TANGENT则会导致数量变多，不存在则不会导致数量变多。
+    
+    '''
+
+    vbAppendNumber = 0
+    # for vertex in indexed_vertices:
     for vertex in indexed_vertices:
         vb.append(vertex)
-        appendNumber = appendNumber + 1
-    # 这里使用了TANGENT后是9326    不使用TANGENT是9309
-    operator.report({'INFO'}, "append number" + str(appendNumber))
+        vbAppendNumber = vbAppendNumber + 1
+    operator.report({'INFO'}, "append number" + str(vbAppendNumber))
 
     vgmaps = {k[15:]: keys_to_ints(v) for k, v in obj.items() if k.startswith('3DMigoto:VGMap:')}
 
@@ -1140,8 +1167,8 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
 @orientation_helper(axis_forward='-Z', axis_up='Y')
 class Import3DMigotoFrameAnalysis(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
     """Import a mesh dumped with 3DMigoto's frame analysis"""
-    bl_idname = "import_mesh.migoto_frame_analysis"
-    bl_label = "Import 3DMigoto Frame Analysis Dump"
+    bl_idname = "import_mesh.migoto_frame_analysis_mmt"
+    bl_label = "Import 3DMigoto Frame Analysis Dump  (MMT)"
     bl_options = {'PRESET', 'UNDO'}
 
     filename_ext = '.txt'
@@ -1273,8 +1300,8 @@ def import_3dmigoto_raw_buffers(operator, context, vb_fmt_path, ib_fmt_path, vb_
 @orientation_helper(axis_forward='-Z', axis_up='Y')
 class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
     """Import raw 3DMigoto vertex and index buffers"""
-    bl_idname = "import_mesh.migoto_raw_buffers"
-    bl_label = "Import 3DMigoto Raw Buffers"
+    bl_idname = "import_mesh.migoto_raw_buffers_mmt"
+    bl_label = "Import 3DMigoto Raw Buffers (MMT)"
     # bl_options = {'PRESET', 'UNDO'}
     bl_options = {'UNDO'}
 
@@ -1384,8 +1411,8 @@ class Import3DMigotoReferenceInputFormat(bpy.types.Operator, ImportHelper):
 
 class Export3DMigoto(bpy.types.Operator, ExportHelper):
     """Export a mesh for re-injection into a game with 3DMigoto"""
-    bl_idname = "export_mesh.migoto"
-    bl_label = "Export 3DMigoto Vertex & Index Buffers"
+    bl_idname = "export_mesh.migoto_mmt"
+    bl_label = "Export 3DMigoto Vertex & Index Buffers (MMT)"
 
     # file extension
     filename_ext = '.vb'
