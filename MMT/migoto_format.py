@@ -1140,12 +1140,12 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
             vertex = blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_lvertex, layout, texcoord_layers)
             # 首先将当前顶点计算为Hash后的顶点然后如果该计算后的Hash顶点不存在，则插入到indexed_vertices里
             # 随后将该顶点添加到face[]里，索引为该顶点在字典里的索引
-            if tuple(vertex["POSITION"]) in unique_position_vertices:
-                tangent_var = unique_position_vertices[tuple(vertex["POSITION"])]
+            if tuple(vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDWEIGHT"] ) in unique_position_vertices:
+                tangent_var = unique_position_vertices[tuple(vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDWEIGHT"])]
                 vertex["TANGENT"] = tangent_var
             else:
                 tangent_var = vertex["TANGENT"]
-                unique_position_vertices[tuple(vertex["POSITION"])] = tangent_var
+                unique_position_vertices[tuple(vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDWEIGHT"])] = tangent_var
                 vertex["TANGENT"] = tangent_var
 
             # TODO 这里我们把获取到的vertex的切线加到一个vertex:切线值的字典中
