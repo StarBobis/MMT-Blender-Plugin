@@ -952,7 +952,10 @@ def mesh_triangulate(me):
     bm.free()
 
 
+
 def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, texcoords):
+
+    # 根据循环顶点中的顶点索引来从总的顶点中获取对应的顶点
     blender_vertex = mesh.vertices[blender_loop_vertex.vertex_index]
     vertex = {}
     seen_offsets = set()
@@ -986,6 +989,7 @@ def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, te
             # DOAXVV has +1/-1 in the 4th component. Not positive what this is,
             # but guessing maybe the bitangent sign? Not even sure it is used...
             # FIXME: Other games
+            # vertex[elem.name] = elem.pad(list(blender_loop_vertex.tangent), blender_loop_vertex.bitangent_sign)
             vertex[elem.name] = elem.pad(list(blender_loop_vertex.tangent), blender_loop_vertex.bitangent_sign)
         elif elem.name.startswith('BLENDINDICES'):
             i = elem.SemanticIndex * 4
@@ -1064,6 +1068,7 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
     else:  # 2.79
         mesh = obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
 
+
     # 使用bmesh复制出一个新mesh并三角化
     mesh_triangulate(mesh)
 
@@ -1116,6 +1121,7 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
     # Blender to do this, but it's easy enough to do this ourselves
     indexed_vertices = collections.OrderedDict()
 
+    unique_position_vertices = {}
     # 先输出看一下这里的顶点数量为多少，经过测试确实是原本的顶点数量
     operator.report({'INFO'}, "mesh.vertices: " + str(mesh.vertices))
 
@@ -1135,12 +1141,27 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
             # 首先将当前顶点计算为Hash后的顶点然后如果该计算后的Hash顶点不存在，则插入到indexed_vertices里
             # 随后将该顶点添加到face[]里，索引为该顶点在字典里的索引
 
+            if tuple(vertex["POSITION"]) in unique_position_vertices:
+                tangent_var = unique_position_vertices[tuple(vertex["POSITION"])]
+                vertex["TANGENT"] = tangent_var
+            else:
+                tangent_var = vertex["TANGENT"]
+                unique_position_vertices[tuple(vertex["POSITION"])] = tangent_var
+                vertex["TANGENT"] = tangent_var
+
             # TODO 这里使用最简单的截断，但是会导致部分顶点索引丢失，导致部分模型缺失，以后再来解决吧，只是作为临时方案使用
-            if len(indexed_vertices) < len(mesh.vertices):
-                indexed_vertex = indexed_vertices.setdefault(HashableVertex(vertex), len(indexed_vertices))
-                # indexed_vertex = indexed_vertices[HashableVertex(vertex)] = len(indexed_vertices)
-                face.append(indexed_vertex)
-                calcNumber = calcNumber + 1
+            # if len(indexed_vertices) < len(mesh.vertices):
+
+            # TODO 这里我们把获取到的vertex的切线加到一个vertex:切线值的字典中
+            #   如果vertex的顶点在字典中出现了，则返回字典中对应列表和当前值的平均值，否则不进行更新
+            #   这样就能得到每个Position对应的平均切线，在切线值相同的情况下，就不会产生额外的多余顶点了。
+
+
+
+            indexed_vertex = indexed_vertices.setdefault(HashableVertex(vertex), len(indexed_vertices))
+            # indexed_vertex = indexed_vertices[HashableVertex(vertex)] = len(indexed_vertices)
+            face.append(indexed_vertex)
+            calcNumber = calcNumber + 1
 
         if ib is not None:
             ib.append(face)
