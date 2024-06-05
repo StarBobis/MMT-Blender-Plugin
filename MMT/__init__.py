@@ -13,9 +13,9 @@ from .animation_operator import *
 bl_info = {
     "name": "MMT-Community Blender Plugin",
     "author": "NicoMico",
-    "description": "Special fork version of DarkStarSword's FallingTs_blender_3dmigoto.py",
+    "description": "Special fork version of DarkStarSword's blender_3dmigoto.py",
     "blender": (3, 6, 8),
-    "version": (1, 0, 0, 8),
+    "version": (1, 4, 7),
     "location": "View3D",
     "warning": "",
     "category": "Generic"

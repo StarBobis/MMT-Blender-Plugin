@@ -1140,7 +1140,6 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
             vertex = blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_lvertex, layout, texcoord_layers)
             # 首先将当前顶点计算为Hash后的顶点然后如果该计算后的Hash顶点不存在，则插入到indexed_vertices里
             # 随后将该顶点添加到face[]里，索引为该顶点在字典里的索引
-
             if tuple(vertex["POSITION"]) in unique_position_vertices:
                 tangent_var = unique_position_vertices[tuple(vertex["POSITION"])]
                 vertex["TANGENT"] = tangent_var
@@ -1149,14 +1148,9 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
                 unique_position_vertices[tuple(vertex["POSITION"])] = tangent_var
                 vertex["TANGENT"] = tangent_var
 
-            # TODO 这里使用最简单的截断，但是会导致部分顶点索引丢失，导致部分模型缺失，以后再来解决吧，只是作为临时方案使用
-            # if len(indexed_vertices) < len(mesh.vertices):
-
             # TODO 这里我们把获取到的vertex的切线加到一个vertex:切线值的字典中
             #   如果vertex的顶点在字典中出现了，则返回字典中对应列表和当前值的平均值，否则不进行更新
             #   这样就能得到每个Position对应的平均切线，在切线值相同的情况下，就不会产生额外的多余顶点了。
-
-
 
             indexed_vertex = indexed_vertices.setdefault(HashableVertex(vertex), len(indexed_vertices))
             # indexed_vertex = indexed_vertices[HashableVertex(vertex)] = len(indexed_vertices)
