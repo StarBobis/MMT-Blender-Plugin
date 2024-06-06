@@ -1141,7 +1141,7 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
             # 首先将当前顶点计算为Hash后的顶点然后如果该计算后的Hash顶点不存在，则插入到indexed_vertices里
             # 随后将该顶点添加到face[]里，索引为该顶点在字典里的索引
 
-            if "POSITION" in vertex and "NORMAL" in vertex and "BLENDINDICES" in vertex and "TEXCOORD" in vertex:
+            if "POSITION" in vertex and "NORMAL" in vertex and "TANGENT" in vertex and "BLENDINDICES" in vertex and "TEXCOORD" in vertex:
                 if tuple(vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDINDICES"] + vertex["TEXCOORD"]  ) in unique_position_vertices:
                     tangent_var = unique_position_vertices[tuple(vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDINDICES"] + vertex["TEXCOORD"] )]
                     vertex["TANGENT"] = tangent_var
