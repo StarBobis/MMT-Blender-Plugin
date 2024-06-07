@@ -1,6 +1,4 @@
 # This migoto_format.py is only used in 3dmigoto import and export options.
-import bpy
-
 from .panel import *
 
 # 这里使用type关键字创建了一个类，类名是DummyIOOBJOrientationHelper，(object,)表示继承自object对象，{}表示没定义属性和方法
@@ -9,9 +7,11 @@ IOOBJOrientationHelper = type('DummyIOOBJOrientationHelper', (object,), {})
 # Constants
 vertex_color_layer_channels = 4
 
+
 # TODO we don't need any old version compatible, remove these in later version.
 def set_active_object(context, obj):
     context.view_layer.objects.active = obj  # the 2.8 way
+
 
 def get_active_object(context):
     return context.view_layer.objects.active
@@ -91,15 +91,15 @@ def EncoderDecoder(fmt):
 
     if unorm16_pattern.match(fmt):
         return (
-        lambda data: numpy.around((numpy.fromiter(data, numpy.float32) * 65535.0)).astype(numpy.uint16).tobytes(),
-        lambda data: (numpy.frombuffer(data, numpy.uint16) / 65535.0).tolist())
+            lambda data: numpy.around((numpy.fromiter(data, numpy.float32) * 65535.0)).astype(numpy.uint16).tobytes(),
+            lambda data: (numpy.frombuffer(data, numpy.uint16) / 65535.0).tolist())
     if unorm8_pattern.match(fmt):
         return (lambda data: numpy.around((numpy.fromiter(data, numpy.float32) * 255.0)).astype(numpy.uint8).tobytes(),
                 lambda data: (numpy.frombuffer(data, numpy.uint8) / 255.0).tolist())
     if snorm16_pattern.match(fmt):
         return (
-        lambda data: numpy.around((numpy.fromiter(data, numpy.float32) * 32767.0)).astype(numpy.int16).tobytes(),
-        lambda data: (numpy.frombuffer(data, numpy.int16) / 32767.0).tolist())
+            lambda data: numpy.around((numpy.fromiter(data, numpy.float32) * 32767.0)).astype(numpy.int16).tobytes(),
+            lambda data: (numpy.frombuffer(data, numpy.int16) / 32767.0).tolist())
     if snorm8_pattern.match(fmt):
         return (lambda data: numpy.around((numpy.fromiter(data, numpy.float32) * 127.0)).astype(numpy.int8).tobytes(),
                 lambda data: (numpy.frombuffer(data, numpy.int8) / 127.0).tolist())
@@ -645,18 +645,8 @@ def import_normals_step2(mesh):
     # Taken from import_obj/import_fbx
     clnors = array('f', [0.0] * (len(mesh.loops) * 3))
     mesh.loops.foreach_get("normal", clnors)
-
-    # Not sure this is still required with use_auto_smooth, but the other
-    # importers do it, and at the very least it shouldn't hurt...
     mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
     mesh.normals_split_custom_set(tuple(zip(*(iter(clnors),) * 3)))
-    mesh.use_auto_smooth = True
-
-    # Nico: 这里我看过了，我们并不需要在导入时默认显示锐边，如果确实需要用到的话自己在选项里开启，而不是作为通用步骤执行。
-    # This has a double meaning, one of which is to use the custom normals
-    # XXX CHECKME: show_edge_sharp moved in 2.80, but I can't actually
-    # recall what it does and have a feeling it was unimportant:
-    # mesh.show_edge_sharp = True
 
 
 def import_vertex_groups(mesh, obj, blend_indices, blend_weights):
@@ -718,7 +708,7 @@ def import_uv_layers(mesh, obj, texcoords, flip_texcoord_v):
             # TODO why use lambda? it's hard to understand.
             if flip_texcoord_v:
                 flip_uv = lambda uv: (uv[0], 1.0 - uv[1])
-                # Record that V was flipped so we know to undo it when exporting:
+                # Record that V was flipped, so we know to undo it when exporting:
                 obj['3DMigoto:' + uv_name] = {'flip_v': True}
             else:
                 flip_uv = lambda uv: uv
@@ -952,7 +942,6 @@ def mesh_triangulate(me):
     bm.free()
 
 
-
 def blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_loop_vertex, layout, texcoords):
 
     # 根据循环顶点中的顶点索引来从总的顶点中获取对应的顶点
@@ -1068,14 +1057,8 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
     else:  # 2.79
         mesh = obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
 
-
     # 使用bmesh复制出一个新mesh并三角化
     mesh_triangulate(mesh)
-
-    # 获取所有索引
-    indices = [l.vertex_index for l in mesh.loops]
-    # 获取所有顶点
-    faces = [indices[i:i + 3] for i in range(0, len(indices), 3)]
 
     try:
         if obj['3DMigoto:IBFormat'] == "DXGI_FORMAT_R16_UINT":
@@ -1120,27 +1103,29 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
     # via the index buffer. There might be a convenience function in
     # Blender to do this, but it's easy enough to do this ourselves
     indexed_vertices = collections.OrderedDict()
-
     unique_position_vertices = {}
-    # 先输出看一下这里的顶点数量为多少，经过测试确实是原本的顶点数量
-    operator.report({'INFO'}, "mesh.vertices: " + str(mesh.vertices))
-
     '''
     Nico:
-    顶点转换为3dmigoto类型的顶点再经过hashable后，如果存在TANGENT则会导致数量变多，不存在则不会导致数量变多。
+        顶点转换为3dmigoto类型的顶点再经过hashable后，如果存在TANGENT则会导致数量变多，不存在则不会导致数量变多。
+        Nico: 初始的Vertex即使是经过TANGENT计算，数量也是和原来一样的
+        但是这里使用了blender_lvertex导致了生成的HashableVertex不一样，因为其它都是固定的只有这个blender_lvertex会改变
+        需要注意的是如果不计算TANGENT或者没有TANGENT属性时不会额外生成顶点
     '''
-    calcNumber = 0
     for poly in mesh.polygons:
         face = []
         for blender_lvertex in mesh.loops[poly.loop_start:poly.loop_start + poly.loop_total]:
-            # Nico: 初始的Vertex即使是经过TANGENT计算，数量也是和原来一样的
-            # 但是这里使用了blender_lvertex导致了生成的HashableVertex不一样，因为其它都是固定的只有这个blender_lvertex会改变
-            # 也许应该参考Blender官方文档来进一步学习blender_lvertex具体作用以及继续研究blender_vertex_to_3dmigoto_vertex函数
-            # 搞清楚为什么这个会导致Hash计算不重复，需要注意的是如果不计算TANGENT或者没有TANGENT属性时不会额外生成顶点
+            #
             vertex = blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_lvertex, layout, texcoord_layers)
-            # 首先将当前顶点计算为Hash后的顶点然后如果该计算后的Hash顶点不存在，则插入到indexed_vertices里
-            # 随后将该顶点添加到face[]里，索引为该顶点在字典里的索引
 
+            '''
+            Nico:
+                首先将当前顶点计算为Hash后的顶点然后如果该计算后的Hash顶点不存在，则插入到indexed_vertices里
+                随后将该顶点添加到face[]里，索引为该顶点在字典里的索引
+                这里我们把获取到的vertex的切线加到一个vertex:切线值的字典中
+                如果vertex的顶点在字典中出现了，则返回字典中对应列表和当前值的平均值，否则不进行更新
+                这样就能得到每个Position对应的平均切线，在切线值相同的情况下，就不会产生额外的多余顶点了。
+                这里我选择简单的使用这个顶点第一次出现的TANGENT作为它的TANGENT，以此避免产生额外多余顶点的问题，后续可以优化为使用平均值作为TANGENT
+            '''
             if "POSITION" in vertex and "NORMAL" in vertex and "TANGENT" in vertex and "BLENDINDICES" in vertex and "TEXCOORD" in vertex:
                 if tuple(vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDINDICES"] + vertex["TEXCOORD"]  ) in unique_position_vertices:
                     tangent_var = unique_position_vertices[tuple(vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDINDICES"] + vertex["TEXCOORD"] )]
@@ -1150,31 +1135,18 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
                     unique_position_vertices[tuple(vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDINDICES"] + vertex["TEXCOORD"] )] = tangent_var
                     vertex["TANGENT"] = tangent_var
 
-            # TODO 这里我们把获取到的vertex的切线加到一个vertex:切线值的字典中
-            #   如果vertex的顶点在字典中出现了，则返回字典中对应列表和当前值的平均值，否则不进行更新
-            #   这样就能得到每个Position对应的平均切线，在切线值相同的情况下，就不会产生额外的多余顶点了。
-
             indexed_vertex = indexed_vertices.setdefault(HashableVertex(vertex), len(indexed_vertices))
-            # indexed_vertex = indexed_vertices[HashableVertex(vertex)] = len(indexed_vertices)
             face.append(indexed_vertex)
-            calcNumber = calcNumber + 1
-
         if ib is not None:
             ib.append(face)
 
-    operator.report({'INFO'}, "IB Append Number: " + str(calcNumber))
-    operator.report({'INFO'}, "indexed_vertices: " + str(len(indexed_vertices)))
-    operator.report({'INFO'}, "IB number : " + str(len(ib)))
-
+    # operator.report({'INFO'}, "Export Vertex Number: " + str(len(indexed_vertices)))
     vb = VertexBuffer(layout=layout)
-    vbAppendNumber = 0
-    # for vertex in indexed_vertices:
     for vertex in indexed_vertices:
         vb.append(vertex)
-        vbAppendNumber = vbAppendNumber + 1
-    operator.report({'INFO'}, "Export Vertex Number: " + str(vbAppendNumber))
 
     vgmaps = {k[15:]: keys_to_ints(v) for k, v in obj.items() if k.startswith('3DMigoto:VGMap:')}
+    # operator.report({'INFO'}, "vgmap length " + str(len(vgmaps)))
 
     if '' not in vgmaps:
         vb.write(open(vb_path, 'wb'), operator=operator)
@@ -1185,6 +1157,7 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
         if suffix:
             path = '%s-%s%s' % (base, suffix, ext)
         vgmap_path = os.path.splitext(path)[0] + '.vgmap'
+        operator.report({'INFO'}, "vgmap_path " + vgmap_path)
         print('Exporting %s...' % path)
         vb.remap_blendindices(obj, vgmap)
         vb.write(open(path, 'wb'), operator=operator)
@@ -1328,8 +1301,8 @@ def import_3dmigoto_raw_buffers(operator, context, vb_fmt_path, ib_fmt_path, vb_
                                 vgmap_path=None, **kwargs):
     paths = (((vb_path, vb_fmt_path), (ib_path, ib_fmt_path), True, None),)
     obj = import_3dmigoto(operator, context, paths, merge_meshes=False, **kwargs)
-    if obj and vgmap_path:
-        apply_vgmap(operator, context, targets=obj, filepath=vgmap_path, rename=True, cleanup=True)
+    # if obj and vgmap_path:
+    #     apply_vgmap(operator, context, targets=obj, filepath=vgmap_path, rename=True, cleanup=True)
 
 
 @orientation_helper(axis_forward='-Z', axis_up='Y')
@@ -1463,7 +1436,7 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
         name="File Path",
         description="Filepath used for exporting",
         subtype='FILE_PATH',
-        default="//output.vb",  # 设置默认路径
+        default="",
     )
 
     # where you do export logic
@@ -1479,58 +1452,3 @@ class Export3DMigoto(bpy.types.Operator, ExportHelper):
         except Fatal as e:
             self.report({'ERROR'}, str(e))
         return {'FINISHED'}
-
-
-def apply_vgmap(operator, context, targets=None, filepath='', commit=False, reverse=False, suffix='', rename=False,
-                cleanup=False):
-    if not targets:
-        targets = context.selected_objects
-
-    if not targets:
-        raise Fatal('No object selected')
-
-    vgmap = json.load(open(filepath, 'r'))
-
-    if reverse:
-        vgmap = {int(v): int(k) for k, v in vgmap.items()}
-    else:
-        vgmap = {k: int(v) for k, v in vgmap.items()}
-
-    for obj in targets:
-        if commit:
-            raise Fatal('commit not yet implemented')
-
-        prop_name = '3DMigoto:VGMap:' + suffix
-        obj[prop_name] = keys_to_strings(vgmap)
-
-        if rename:
-            for k, v in vgmap.items():
-                if str(k) in obj.vertex_groups.keys():
-                    continue
-                if str(v) in obj.vertex_groups.keys():
-                    obj.vertex_groups[str(v)].name = k
-                else:
-                    obj.vertex_groups.new(name=str(k))
-        if cleanup:
-            for vg in obj.vertex_groups:
-                if vg.name not in vgmap:
-                    obj.vertex_groups.remove(vg)
-
-        if '3DMigoto:VBLayout' not in obj:
-            operator.report({'WARNING'},
-                            '%s is not a 3DMigoto mesh. Vertex Group Map custom property applied anyway' % obj.name)
-        else:
-            operator.report({'INFO'}, 'Applied vgmap to %s' % obj.name)
-
-
-# -----------------------------Menu Function define-------------------------------------
-def menu_func_import_fa(self, context):
-    self.layout.operator(Import3DMigotoFrameAnalysis.bl_idname, text="3DMigoto FrameAnalysis dump (ib.txt + vb0.txt) (MMT)")
-
-
-def menu_func_import_raw(self, context):
-    self.layout.operator(Import3DMigotoRaw.bl_idname, text="3DMigoto raw buffers (.vb + .ib) (MMT)")
-
-
-def menu_func_export(self, context):
-    self.layout.operator(Export3DMigoto.bl_idname, text="3DMigoto raw buffers (.vb + .ib) (MMT)")

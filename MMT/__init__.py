@@ -64,13 +64,6 @@ def register():
     # 新建一个属性用来专门装MMT的路径
     bpy.types.Scene.mmt_props = bpy.props.PointerProperty(type=MMTPathProperties)
 
-    # migoto_format
-    # Nico: 不需要从Import里点击了，太麻烦了，直接从我们的Panel里点击
-    # 而且这样的话不会和其它人的脚本冲突
-    # bpy.types.TOPBAR_MT_file_import.append(menu_func_import_fa)
-    # bpy.types.TOPBAR_MT_file_import.append(menu_func_import_raw)
-    # bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
-
     # mesh_operator
     bpy.types.VIEW3D_MT_object_context_menu.append(menu_func_migoto_right_click)
 
@@ -88,11 +81,6 @@ def unregister():
         bpy.utils.unregister_class(cls)
 
     del bpy.types.Scene.mmt_props
-
-    # migoto_format
-    # bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_fa)
-    # bpy.types.TOPBAR_MT_file_import.remove(menu_func_import_raw)
-    # bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
 
     # mesh_operator
     bpy.types.VIEW3D_MT_object_context_menu.remove(menu_func_migoto_right_click)
