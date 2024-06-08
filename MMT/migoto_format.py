@@ -931,8 +931,7 @@ def find_texture(texture_name, directory, debug=False):
 def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_forward='-Z', axis_up='Y',
                           pose_cb_off=[0, 0], pose_cb_step=1):
     # TODO 默认我们不打开Debug，这个最终是否需要仍然需要测试决定，暂时先抄过来
-    # TODO Blender插件中无法使用print，有些版本不会打开控制台,如果必须要输出的话需要转换成INFO
-    debug = True
+    debug = False
     # Открыть консоль для вывода отладочных сообщений (打开控制台输出调试信息)
     if debug:
         bpy.ops.wm.console_toggle()
