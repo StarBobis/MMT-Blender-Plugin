@@ -345,6 +345,7 @@ def mmt_cancel_auto_smooth(self, context):
     for obj in bpy.context.selected_objects:
         if obj.type == "MESH":
             # 取消勾选"Auto Smooth"
+            # TODO 4.1中移除了use_auto_smooth
             obj.data.use_auto_smooth = False
     return {'FINISHED'}
 
@@ -361,7 +362,9 @@ def mmt_set_auto_smooth_89(self, context):
     for obj in bpy.context.selected_objects:
         if obj.type == "MESH":
             # 取消勾选"Auto Smooth"
+            # TODO 4.1中移除了use_auto_smooth
             obj.data.use_auto_smooth = True
+            # TODO 4.1中移除了auto_smooth_angle
             obj.data.auto_smooth_angle = math.radians(89)
     return {'FINISHED'}
 
@@ -372,6 +375,76 @@ class MMTSetAutoSmooth89(bpy.types.Operator):
 
     def execute(self, context):
         return mmt_set_auto_smooth_89(self, context)
+
+
+
+def show_indexed_vertices(self, context):
+    for obj in bpy.context.selected_objects:
+        stride = obj['3DMigoto:VBStride']
+        layout = InputLayout(obj['3DMigoto:VBLayout'], stride=stride)
+        # 获取Mesh
+        if hasattr(context, "evaluated_depsgraph_get"):  # 2.80
+            mesh = obj.evaluated_get(context.evaluated_depsgraph_get()).to_mesh()
+        else:  # 2.79
+            mesh = obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
+
+        mesh_triangulate(mesh)
+        mesh.calc_tangents()
+
+        texcoord_layers = {}
+        for uv_layer in mesh.uv_layers:
+            texcoords = {}
+
+            try:
+                flip_texcoord_v = obj['3DMigoto:' + uv_layer.name]['flip_v']
+                if flip_texcoord_v:
+                    flip_uv = lambda uv: (uv[0], 1.0 - uv[1])
+                else:
+                    flip_uv = lambda uv: uv
+            except KeyError:
+                flip_uv = lambda uv: uv
+
+            for l in mesh.loops:
+                uv = flip_uv(uv_layer.data[l.index].uv)
+                texcoords[l.index] = uv
+            texcoord_layers[uv_layer.name] = texcoords
+
+        indexed_vertices = collections.OrderedDict()
+        unique_position_vertices = {}
+
+        indexNumber = 0
+        for poly in mesh.polygons:
+            face = []
+            for blender_lvertex in mesh.loops[poly.loop_start:poly.loop_start + poly.loop_total]:
+                #
+                vertex = blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_lvertex, layout, texcoord_layers)
+                if "POSITION" in vertex and "NORMAL" in vertex and "TANGENT" in vertex and "BLENDINDICES" in vertex and "TEXCOORD" in vertex:
+                    if tuple(vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDINDICES"] + vertex[
+                        "TEXCOORD"]) in unique_position_vertices:
+                        tangent_var = unique_position_vertices[
+                            tuple(vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDINDICES"] + vertex["TEXCOORD"])]
+                        vertex["TANGENT"] = tangent_var
+                    else:
+                        tangent_var = vertex["TANGENT"]
+                        unique_position_vertices[tuple(
+                            vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDINDICES"] + vertex[
+                                "TEXCOORD"])] = tangent_var
+                        vertex["TANGENT"] = tangent_var
+
+                indexNumber = indexNumber + 1
+                indexed_vertex = indexed_vertices.setdefault(HashableVertex(vertex), len(indexed_vertices))
+                face.append(indexed_vertex)
+        self.report({'INFO'}, "Real Indices: " + str(indexNumber) + " Original Vertices:" + str(obj['3DMigoto:OriginalVertexNumber']) + "  Real Vertices: "+str(len(indexed_vertices)))
+
+    return {'FINISHED'}
+
+
+class MMTShowIndexedVertices(bpy.types.Operator):
+    bl_idname = "object.mmt_show_indexed_vertices"
+    bl_label = "Show Indexed Vertices and Indexes Number"
+
+    def execute(self, context):
+        return show_indexed_vertices(self, context)
 
 
 # -----------------------------------这个属于右键菜单注册，单独的函数要往上面放---------------------------------------
@@ -391,6 +464,7 @@ class MigotoRightClickMenu(bpy.types.Menu):
         layout.operator("object.mmt_reset_rotation")
         layout.operator("object.mmt_cancel_auto_smooth")
         layout.operator("object.mmt_set_auto_smooth_89")
+        layout.operator("object.mmt_show_indexed_vertices")
 
 
 # 定义菜单项的注册函数

@@ -46,6 +46,7 @@ register_classes = (
     MigotoRightClickMenu,
     MMTCancelAutoSmooth,
     MMTSetAutoSmooth89,
+    MMTShowIndexedVertices,
 
     # MMT的一键导入导出
     MMTImportAllTextModel,

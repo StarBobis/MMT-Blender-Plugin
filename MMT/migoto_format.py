@@ -636,8 +636,11 @@ def import_normals_step1(mesh, data):
     # Note: we store 'temp' normals in loops, since validate() may alter final mesh,
     #       we can only set custom lnors *after* calling it.
 
+    # TODO This can't use in BlenderV4.1  see:
+    # https://developer.blender.org/docs/release_notes/4.1/python_api/#mesh
     mesh.create_normals_split()
     for l in mesh.loops:
+        # TODO mesh loop.normal is read only in 4.1!
         l.normal[:] = normals[l.vertex_index]
 
 
@@ -982,6 +985,9 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     set_active_object(context, obj)
 
     operator.report({'INFO'}, "Import Into 3Dmigoto")
+
+    obj['3DMigoto:OriginalVertexNumber'] = len(mesh.vertices)
+
 
     # Nico: 下面是由rayvy提议的添加贴图自动导入支持，需要大量测试如何以优雅的方式和MMT结合在一起
     # Убедимся, что paths[0] является строкой (确保paths[0]是一个字符串)

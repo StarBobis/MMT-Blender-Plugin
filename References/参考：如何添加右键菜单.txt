@@ -17,7 +17,7 @@ class RemoveNotNumberVertexGroup(bpy.types.Operator):
 
 
 1.首先参考上面的格式，改一下定义的函数名，以及函数里对应的操作，以及类名。
-2.注册是在mesh_operator.py里：
+2.让菜单右键显示是在mesh_operator.py里：
 class MigotoRightClickMenu(bpy.types.Menu):
     bl_idname = "VIEW3D_MT_object_3Dmigoto"
     bl_label = "3Dmigoto"
@@ -32,7 +32,7 @@ class MigotoRightClickMenu(bpy.types.Menu):
         layout.operator("object.convert_to_fragment")
 
 在后面追加一个刚才创建的Operator就好了
-3.在__init__py里添加这个class的注册，参考如下
+3.在__init__py里添加这个class的注册，参考如下，这样才能让这个功能加载到Blender
 register_classes = (
     # migoto_format
     MMTPathProperties,
