@@ -434,7 +434,7 @@ def show_indexed_vertices(self, context):
                 indexNumber = indexNumber + 1
                 indexed_vertex = indexed_vertices.setdefault(HashableVertex(vertex), len(indexed_vertices))
                 face.append(indexed_vertex)
-        self.report({'INFO'}, "Real Indices: " + str(indexNumber) + " Original Vertices:" + str(obj['3DMigoto:OriginalVertexNumber']) + "  Real Vertices: "+str(len(indexed_vertices)))
+        self.report({'INFO'},"Original Indices:" +str(obj['3DMigoto:OriginalIndicesNumber']) +  " Current Indices: " + str(indexNumber) + " Original Vertices:" + str(obj['3DMigoto:OriginalVertexNumber']) + "  Current Vertices: "+str(len(indexed_vertices)))
 
     return {'FINISHED'}
 

@@ -987,6 +987,7 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     operator.report({'INFO'}, "Import Into 3Dmigoto")
 
     obj['3DMigoto:OriginalVertexNumber'] = len(mesh.vertices)
+    obj['3DMigoto:OriginalIndicesNumber'] = len(mesh.loops)
 
 
     # Nico: 下面是由rayvy提议的添加贴图自动导入支持，需要大量测试如何以优雅的方式和MMT结合在一起
