@@ -1,7 +1,6 @@
 # This mesh_operator.py is only used in right click options.
 import math
 
-from .panel import *
 from .migoto_format import *
 
 
@@ -377,7 +376,6 @@ class MMTSetAutoSmooth89(bpy.types.Operator):
         return mmt_set_auto_smooth_89(self, context)
 
 
-
 def show_indexed_vertices(self, context):
     for obj in bpy.context.selected_objects:
         stride = obj['3DMigoto:VBStride']
@@ -394,7 +392,6 @@ def show_indexed_vertices(self, context):
         texcoord_layers = {}
         for uv_layer in mesh.uv_layers:
             texcoords = {}
-
             try:
                 flip_texcoord_v = obj['3DMigoto:' + uv_layer.name]['flip_v']
                 if flip_texcoord_v:
@@ -412,29 +409,24 @@ def show_indexed_vertices(self, context):
         indexed_vertices = collections.OrderedDict()
         unique_position_vertices = {}
 
-        indexNumber = 0
+        index_number = 0
         for poly in mesh.polygons:
             face = []
             for blender_lvertex in mesh.loops[poly.loop_start:poly.loop_start + poly.loop_total]:
                 #
                 vertex = blender_vertex_to_3dmigoto_vertex(mesh, obj, blender_lvertex, layout, texcoord_layers)
                 if "POSITION" in vertex and "NORMAL" in vertex and "TANGENT" in vertex and "BLENDINDICES" in vertex and "TEXCOORD" in vertex:
-                    if tuple(vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDINDICES"] + vertex[
-                        "TEXCOORD"]) in unique_position_vertices:
-                        tangent_var = unique_position_vertices[
-                            tuple(vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDINDICES"] + vertex["TEXCOORD"])]
+                    if tuple(vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDINDICES"] + vertex["TEXCOORD"]) in unique_position_vertices:
+                        tangent_var = unique_position_vertices[tuple(vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDINDICES"] + vertex["TEXCOORD"])]
                         vertex["TANGENT"] = tangent_var
                     else:
                         tangent_var = vertex["TANGENT"]
-                        unique_position_vertices[tuple(
-                            vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDINDICES"] + vertex[
-                                "TEXCOORD"])] = tangent_var
+                        unique_position_vertices[tuple(vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDINDICES"] + vertex["TEXCOORD"])] = tangent_var
                         vertex["TANGENT"] = tangent_var
-
-                indexNumber = indexNumber + 1
+                index_number = index_number + 1
                 indexed_vertex = indexed_vertices.setdefault(HashableVertex(vertex), len(indexed_vertices))
                 face.append(indexed_vertex)
-        self.report({'INFO'},"Original Indices:" +str(obj['3DMigoto:OriginalIndicesNumber']) +  " Current Indices: " + str(indexNumber) + " Original Vertices:" + str(obj['3DMigoto:OriginalVertexNumber']) + "  Current Vertices: "+str(len(indexed_vertices)))
+        self.report({'INFO'}, "Original Indices:" + str(obj['3DMigoto:OriginalIndicesNumber']) + " Current Indices: " + str(index_number) + " Original Vertices:" + str(obj['3DMigoto:OriginalVertexNumber']) + "  Current Vertices: "+str(len(indexed_vertices)))
 
     return {'FINISHED'}
 

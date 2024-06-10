@@ -15,7 +15,7 @@ bl_info = {
     "author": "NicoMico",
     "description": "Special fork version of DarkStarSword's blender_3dmigoto.py",
     "blender": (3, 6, 8),
-    "version": (1, 5, 0),
+    "version": (1, 5, 1),
     "location": "View3D",
     "warning": "",
     "category": "Generic"
@@ -45,8 +45,9 @@ register_classes = (
     MMTResetRotation,
     MigotoRightClickMenu,
     MMTCancelAutoSmooth,
-    MMTSetAutoSmooth89,
     MMTShowIndexedVertices,
+    MMTSetAutoSmooth89,
+
 
     # MMT的一键导入导出
     MMTImportAllTextModel,
