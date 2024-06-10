@@ -986,8 +986,24 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
 
     operator.report({'INFO'}, "Import Into 3Dmigoto")
 
+    import bmesh
+    # 创建 BMesh 副本
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+
+    # 删除松散点 delete loose before get this
+    bm.verts.ensure_lookup_table()
+    for v in bm.verts:
+        if not v.link_faces:
+            bm.verts.remove(v)
+
+    # 将 BMesh 更新回原始网格
+    bm.to_mesh(mesh)
+    bm.free()
+
     obj['3DMigoto:OriginalVertexNumber'] = len(mesh.vertices)
     obj['3DMigoto:OriginalIndicesNumber'] = len(mesh.loops)
+
 
 
     # Nico: 下面是由rayvy提议的添加贴图自动导入支持，需要大量测试如何以优雅的方式和MMT结合在一起
@@ -1378,6 +1394,9 @@ def import_3dmigoto_raw_buffers(operator, context, vb_fmt_path, ib_fmt_path, vb_
                                 vgmap_path=None, **kwargs):
     paths = (((vb_path, vb_fmt_path), (ib_path, ib_fmt_path), True, None),)
     obj = import_3dmigoto(operator, context, paths, merge_meshes=False, **kwargs)
+
+
+
     # if obj and vgmap_path:
     #     apply_vgmap(operator, context, targets=obj, filepath=vgmap_path, rename=True, cleanup=True)
 
