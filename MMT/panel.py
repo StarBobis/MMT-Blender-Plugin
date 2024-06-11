@@ -149,7 +149,7 @@ class MMTPanel(bpy.types.Panel):
 
         # 一键快速导入所有位于OutputFolder下的.txt模型
         layout.label(text="Fast import&export in OutputFolder")
-        operator_fast_import = self.layout.operator("mmt.import_all", text="Import All .txt model in OutputFolder ")
+        operator_fast_import = self.layout.operator("mmt.import_all", text="Import All .ib .vb model in OutputFolder ")
 
         # 一键快速导出当前选中Collection中的所有model到对应的hash值文件夹中，并直接调用MMT.exe的Mod生成方法，做到导出完即可游戏里F10刷新看效果。
         operator_export_ibvb = self.layout.operator("mmt.export_all", text="Export selected collection's vb model to OutputFolder")

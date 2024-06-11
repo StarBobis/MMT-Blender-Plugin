@@ -121,8 +121,6 @@ def fill_vertex_group_gaps(self, context):
     # e.g. if the selected model has groups 0 1 4 5 7 2 it adds an empty group for 3 and 6 and sorts to make it 0 1 2 3 4 5 6 7
     # Very useful to make sure there are no gaps or out-of-order vertex groups
 
-    import bpy
-
     # Can change this to another number in order to generate missing groups up to that number
     # e.g. setting this to 130 will create 0,1,2...130 even if the active selected object only has 90
     # Otherwise, it will use the largest found group number and generate everything up to that number
@@ -467,20 +465,20 @@ def menu_func_migoto_right_click(self, context):
 # -----------------------------------下面这两个不属于右键菜单，属于MMT面板，所以放到最下面---------------------------------------
 class MMTImportAllTextModel(bpy.types.Operator):
     bl_idname = "mmt.import_all"
-    bl_label = "Import all txt model from current OutputFolder"
+    bl_label = "Import all .ib .vb model from current OutputFolder"
 
     def execute(self, context):
         # 首先根据MMT路径，获取
         mmt_path = bpy.context.scene.mmt_props.path
         current_game = ""
-        main_setting_path = os.path.join(context.scene.mmt_props.path, "Configs\\wheel_setting\\MainSetting.json")
+        main_setting_path = os.path.join(context.scene.mmt_props.path, "Configs\\Main.json")
         if os.path.exists(main_setting_path):
             main_setting_file = open(main_setting_path)
             main_setting_json = json.load(main_setting_file)
             main_setting_file.close()
             current_game = main_setting_json["GameName"]
 
-        game_config_path = os.path.join(context.scene.mmt_props.path, "Configs\\game_config\\" + current_game + "Config.json")
+        game_config_path = os.path.join(context.scene.mmt_props.path, "Games\\" + current_game + "\\Config.json")
         game_config_file = open(game_config_path)
         game_config_json = json.load(game_config_file)
         game_config_file.close()
@@ -575,8 +573,6 @@ class MMTExportAllIBVBModel(bpy.types.Operator):
 
                 # FIXME: ExportHelper will check for overwriting vb_path, but not ib_path
 
-                # Nico: now we use falling-ts 's solution to not change vertex group.
-                # export_3dmigoto_without_position_increase(self, context, vb_path, ib_path, fmt_path)
                 export_3dmigoto(self, context, vb_path, ib_path, fmt_path)
 
         self.report({'INFO'}, "Export Success!")

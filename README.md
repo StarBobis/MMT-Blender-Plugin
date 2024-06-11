@@ -4,17 +4,14 @@ And modify some code to better meets our needs, mainly developed for MMT-Communi
 
 
 # Notice
-1,These scripts is just developed for fun and keep changing with time, so there will not be a released version of it.
+1,How to use?
 
-2,These scripts is copied or learned from other author, I just merge them together and add some modify to let it work better.
+Pack MMT folder into MMT.zip and install it from your blender's preferences menu or download latest version from Release.
 
-3,How to use?
-
-Pack MMT folder into MMT.zip and install it from your blender's preferences menu.
-
-4,Files in References may directly copied from other's work and credit to their repo and only used as a reference,
+2,Files in References may directly copied from other's work and credit to their repo and only used as a reference,
 and also some tutorials or documents in there, it keep change with development,
 so don't be suprised if things disappear suddenly.
+
 # User Environment
 This plugin is designed to work on official Blender release: 
 
