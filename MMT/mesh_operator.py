@@ -496,13 +496,14 @@ class MMTImportAllTextModel(bpy.types.Operator):
         for import_folder_path in import_folder_path_list:
             # TODO 在这里导入当前文件夹下所有的ib vb文件
             # 1.我们需要添加到一个新建的集合里，方便后续操作
-            collection = bpy.data.collections.new("MMT-Import")
+            folder_draw_ib_name = os.path.basename(import_folder_path)
+            collection = bpy.data.collections.new(folder_draw_ib_name)
             bpy.context.scene.collection.children.link(collection)
 
             # 每个import_folder_path都是一个drawIB
             # 这里我们需要获取到文件夹名称
             # 获取文件夹名称
-            folder_draw_ib_name = os.path.basename(import_folder_path)
+
             # 读取文件夹下面所有的vb和ib文件的prefix
             prefix_set = set()
             # (1) 获取所有ib文件前缀列表
