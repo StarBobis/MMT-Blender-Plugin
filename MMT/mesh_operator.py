@@ -499,27 +499,48 @@ class MMTImportAllTextModel(bpy.types.Operator):
             collection = bpy.data.collections.new("MMT-Import")
             bpy.context.scene.collection.children.link(collection)
 
-            # 2.
+            # 每个import_folder_path都是一个drawIB
+            # 这里我们需要获取到文件夹名称
+            # 获取文件夹名称
+            folder_draw_ib_name = os.path.basename(import_folder_path)
+            # 读取文件夹下面所有的vb和ib文件的prefix
+            prefix_set = set()
+            # (1) 获取所有ib文件前缀列表
+            # self.report({'INFO'}, "Folder Name：" + import_folder_path)
+            # 构造需要匹配的文件路径模式
+            file_pattern = os.path.join(import_folder_path, "*.ib")
+            # 使用 glob.glob 获取匹配的文件列表
+            txt_file_list = glob(file_pattern)
+            for txt_file_path in txt_file_list:
+                # self.report({'INFO'}, "txt file: " + txt_file_path)
+                txt_file_splits = os.path.basename(txt_file_path).split("-")
+                ib_file_name = txt_file_splits[0] + "-" + txt_file_splits[1]
+                ib_file_name = ib_file_name[0:len(ib_file_name) - 3]
+                prefix_set.add(ib_file_name)
+            # 遍历并导入每一个ib vb文件
+            for prefix in prefix_set:
+                vb_bin_path = import_folder_path + "\\" + prefix + '.vb'
+                ib_bin_path = import_folder_path + "\\" + prefix + '.ib'
+                fmt_path = import_folder_path + "\\" + prefix + '.fmt'
+                if not os.path.exists(vb_bin_path):
+                    raise Fatal('Unable to find matching .vb file for %s' % import_folder_path + "\\" + prefix)
+                if not os.path.exists(ib_bin_path):
+                    raise Fatal('Unable to find matching .ib file for %s' % import_folder_path + "\\" + prefix)
+                if not os.path.exists(fmt_path):
+                    fmt_path = None
 
-            # 一些需要传递过去的参数，其中paths还搞不明白应该是什么参数
-            migoto_raw_import_options = {}
+                # 一些需要传递过去的参数，反正这里传空的是可以用的
+                migoto_raw_import_options = {}
 
-            # 这里使用一个done的set来记录已经处理过的文件路径，如果处理过就会在里面触发continue
-            done = set()
-            dirname = os.path.dirname(self.filepath)
-            for filename in self.files:
+                # 这里使用一个done的set来记录已经处理过的文件路径，如果处理过就会在里面触发continue
+                done = set()
                 try:
-                    # TODO 必须去除get_vb_ib_paths的使用，改成手动组装
-                    (vb_path, ib_path, fmt_path, vgmap_path) = self.get_vb_ib_paths(
-                        os.path.join(dirname, filename.name))
-                    if os.path.normcase(vb_path) in done:
+                    if os.path.normcase(vb_bin_path) in done:
                         continue
-                    done.add(os.path.normcase(vb_path))
-
+                    done.add(os.path.normcase(vb_bin_path))
                     if fmt_path is not None:
-                        obj_results = import_3dmigoto_raw_buffers(self, context, fmt_path, fmt_path, vb_path=vb_path,
-                                                                  ib_path=ib_path,
-                                                                  vgmap_path=vgmap_path, **migoto_raw_import_options)
+                        obj_results = import_3dmigoto_raw_buffers(self, context, fmt_path, fmt_path, vb_path=vb_bin_path,
+                                                                  ib_path=ib_bin_path, **migoto_raw_import_options)
                         # 虽然复制之后名字会多个001 002这种，但是不影响正常使用，只要能达到效果就行了
                         for obj in obj_results:
                             new_object = obj.copy()
@@ -528,33 +549,10 @@ class MMTImportAllTextModel(bpy.types.Operator):
                             collection.objects.link(new_object)
                             bpy.data.objects.remove(obj)
                     else:
-                        migoto_raw_import_options['vb_path'] = vb_path
-                        migoto_raw_import_options['ib_path'] = ib_path
-                        bpy.ops.import_mesh.migoto_input_format('INVOKE_DEFAULT')
+                        self.report({'ERROR'}, "Can't find .fmt file!")
                 except Fatal as e:
                     self.report({'ERROR'}, str(e))
 
-
-
-            # prefix_set = set()
-            # # (1) 获取所有txt文件列表
-            # # self.report({'INFO'}, "Folder Name：" + import_folder_path)
-            # # 构造需要匹配的文件路径模式
-            # file_pattern = os.path.join(import_folder_path, "*.txt")
-            # # 使用 glob.glob 获取匹配的文件列表
-            # txt_file_list = glob(file_pattern)
-            # for txt_file_path in txt_file_list:
-            #     # self.report({'INFO'}, "txt file: " + txt_file_path)
-            #     txt_file_splits = os.path.basename(txt_file_path).split("-")
-            #     prefix_set.add(txt_file_splits[0] + "-" + txt_file_splits[1])
-            #
-            # # (2)
-            # special_path4_set = set()
-            # for prefix in prefix_set:
-            #     self.report({'INFO'}, "txt file prefix ib: " + import_folder_path + "\\" + prefix + "-ib.txt")
-            #     self.report({'INFO'}, "txt file prefix vb0: " + import_folder_path + "\\" + prefix + "-vb0.txt")
-            #     special_path4_set.add((import_folder_path + "\\" + prefix + "-vb0.txt", import_folder_path + "\\" + prefix + "-ib.txt", False,None))
-            # import_3dmigoto(self, context, special_path4_set)
         return {'FINISHED'}
 
 

@@ -15,7 +15,7 @@ bl_info = {
     "author": "NicoMico",
     "description": "Special fork version of DarkStarSword's blender_3dmigoto.py",
     "blender": (3, 6, 8),
-    "version": (1, 5, 1),
+    "version": (1, 5, 2),
     "location": "View3D",
     "warning": "",
     "category": "Generic"
