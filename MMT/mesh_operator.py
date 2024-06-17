@@ -483,13 +483,7 @@ class MMTImportAllTextModel(bpy.types.Operator):
         game_config_json = json.load(game_config_file)
         game_config_file.close()
 
-        output_folder_path = ""
-        game_setting_path = os.path.join(context.scene.mmt_props.path, "Configs\\wheel_setting\\GameSetting.json")
-        if os.path.exists(game_setting_path):
-            game_setting_file = open(game_setting_path)
-            game_setting_json = json.load(game_setting_file)
-            game_setting_file.close()
-            output_folder_path = str(game_setting_json[current_game + "_Dev"]["OutputFolder"]).replace("/","\\")
+        output_folder_path = mmt_path + "Games\\" + current_game + "\\3Dmigoto\\Mods\\output\\"
 
         import_folder_path_list = []
         for ib_config in game_config_json:
@@ -500,25 +494,67 @@ class MMTImportAllTextModel(bpy.types.Operator):
         # self.report({'INFO'}, "读取到的drawIB文件夹总数量：" + str(len(import_folder_path_list)))
 
         for import_folder_path in import_folder_path_list:
-            prefix_set = set()
-            # (1) 获取所有txt文件列表
-            # self.report({'INFO'}, "Folder Name：" + import_folder_path)
-            # 构造需要匹配的文件路径模式
-            file_pattern = os.path.join(import_folder_path, "*.txt")
-            # 使用 glob.glob 获取匹配的文件列表
-            txt_file_list = glob(file_pattern)
-            for txt_file_path in txt_file_list:
-                # self.report({'INFO'}, "txt file: " + txt_file_path)
-                txt_file_splits = os.path.basename(txt_file_path).split("-")
-                prefix_set.add(txt_file_splits[0] + "-" + txt_file_splits[1])
+            # TODO 在这里导入当前文件夹下所有的ib vb文件
+            # 1.我们需要添加到一个新建的集合里，方便后续操作
+            collection = bpy.data.collections.new("MMT-Import")
+            bpy.context.scene.collection.children.link(collection)
 
-            # (2)
-            special_path4_set = set()
-            for prefix in prefix_set:
-                self.report({'INFO'}, "txt file prefix ib: " + import_folder_path + "\\" + prefix + "-ib.txt")
-                self.report({'INFO'}, "txt file prefix vb0: " + import_folder_path + "\\" + prefix + "-vb0.txt")
-                special_path4_set.add((import_folder_path + "\\" + prefix + "-vb0.txt", import_folder_path + "\\" + prefix + "-ib.txt", False,None))
-            import_3dmigoto(self, context, special_path4_set)
+            # 2.
+
+            # 一些需要传递过去的参数，其中paths还搞不明白应该是什么参数
+            migoto_raw_import_options = {}
+
+            # 这里使用一个done的set来记录已经处理过的文件路径，如果处理过就会在里面触发continue
+            done = set()
+            dirname = os.path.dirname(self.filepath)
+            for filename in self.files:
+                try:
+                    # TODO 必须去除get_vb_ib_paths的使用，改成手动组装
+                    (vb_path, ib_path, fmt_path, vgmap_path) = self.get_vb_ib_paths(
+                        os.path.join(dirname, filename.name))
+                    if os.path.normcase(vb_path) in done:
+                        continue
+                    done.add(os.path.normcase(vb_path))
+
+                    if fmt_path is not None:
+                        obj_results = import_3dmigoto_raw_buffers(self, context, fmt_path, fmt_path, vb_path=vb_path,
+                                                                  ib_path=ib_path,
+                                                                  vgmap_path=vgmap_path, **migoto_raw_import_options)
+                        # 虽然复制之后名字会多个001 002这种，但是不影响正常使用，只要能达到效果就行了
+                        for obj in obj_results:
+                            new_object = obj.copy()
+                            new_object.data = obj.data.copy()
+
+                            collection.objects.link(new_object)
+                            bpy.data.objects.remove(obj)
+                    else:
+                        migoto_raw_import_options['vb_path'] = vb_path
+                        migoto_raw_import_options['ib_path'] = ib_path
+                        bpy.ops.import_mesh.migoto_input_format('INVOKE_DEFAULT')
+                except Fatal as e:
+                    self.report({'ERROR'}, str(e))
+
+
+
+            # prefix_set = set()
+            # # (1) 获取所有txt文件列表
+            # # self.report({'INFO'}, "Folder Name：" + import_folder_path)
+            # # 构造需要匹配的文件路径模式
+            # file_pattern = os.path.join(import_folder_path, "*.txt")
+            # # 使用 glob.glob 获取匹配的文件列表
+            # txt_file_list = glob(file_pattern)
+            # for txt_file_path in txt_file_list:
+            #     # self.report({'INFO'}, "txt file: " + txt_file_path)
+            #     txt_file_splits = os.path.basename(txt_file_path).split("-")
+            #     prefix_set.add(txt_file_splits[0] + "-" + txt_file_splits[1])
+            #
+            # # (2)
+            # special_path4_set = set()
+            # for prefix in prefix_set:
+            #     self.report({'INFO'}, "txt file prefix ib: " + import_folder_path + "\\" + prefix + "-ib.txt")
+            #     self.report({'INFO'}, "txt file prefix vb0: " + import_folder_path + "\\" + prefix + "-vb0.txt")
+            #     special_path4_set.add((import_folder_path + "\\" + prefix + "-vb0.txt", import_folder_path + "\\" + prefix + "-ib.txt", False,None))
+            # import_3dmigoto(self, context, special_path4_set)
         return {'FINISHED'}
 
 
