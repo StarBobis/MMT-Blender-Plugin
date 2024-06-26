@@ -187,9 +187,6 @@ class MMDModIniGenerator(bpy.types.Operator):
         if generate_switch_key:
             output_ini_content = output_ini_content + "endif" + "\n"
         output_ini_content = output_ini_content + "\n"
-
-
-
         output_ini_content = output_ini_content + "[TextureOverride_" + draw_ib + "_IB_SKIP]" + "\n"
         output_ini_content = output_ini_content + "hash = " + draw_ib + "\n"
         if generate_switch_key:

@@ -2,7 +2,6 @@
 Special version of 3Dmigoto blender plugin originally forked from https://github.com/DarkStarSword/3d-fixes.
 And modify some code to better meets our needs, mainly developed for MMT-Community(MigotoModTool).
 
-
 # Notice
 1,How to use?
 
@@ -26,7 +25,7 @@ https://www.blender.org/download/lts/3-6/
 - Blender Version: 4.0 (or at least 3.6.8 LTS)
 
 Extra modules: 
-- Fake bpy: https://github.com/nutti/fake-bpy-module (pip install fake-bpy-module-4.0 or pip install fake-bpy-module-3.6)
+- Fake bpy: https://github.com/nutti/fake-bpy-module (pip install fake-bpy-module-3.6)
 - Numpy: pip install numpy
 
 Notice: commit code back to this repo need to follow a core rule: code need to be easy to read more than execute speed.
@@ -34,12 +33,9 @@ Python is not design to execute fast,but designed to let people work together an
 not a language for you to show your programming skills or try to use unusual feature to kill other programmer's valuable time.
 
 # LICENSE
-This project use GNU3 as main LICENSE,and MPL-2.0 as backup, you can use one of them.
+This project use GNU3 as main LICENSE,and MPL-2.0 as backup.
 - GNU GENERAL PUBLIC LICENSE Version 3
 - Mozilla Public License 2.0
-
-# Ask for help
-https://discord.gg/Cz577BcRf5
 
 # Acknowledgements
 The original code is mainly forked from @Ian Munsie (darkstarsword@gmail.com),
@@ -53,3 +49,4 @@ huge thanks for their great code:
 - https://github.com/SilentNightSound/SR-Model-Importer
 - https://github.com/leotorrez/LeoTools
 - https://github.com/falling-ts/free-model
+- https://github.com/SpectrumQT/WWMI-TOOLS

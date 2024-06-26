@@ -11,11 +11,12 @@ from .animation_operator import *
 
 
 bl_info = {
-    "name": "MMT-Community Blender Plugin",
-    "author": "NicoMico",
+    "name": "MMT-Community's Blender Plugin",
+    "fork author": "NicoMico",
+    "original author": "DarkStarSword",
     "description": "Special fork version of DarkStarSword's blender_3dmigoto.py",
-    "blender": (3, 6, 8),
-    "version": (1, 5, 2),
+    "blender": (3, 6, 0),
+    "version": (1, 5, 3),
     "location": "View3D",
     "warning": "",
     "category": "Generic"
@@ -28,13 +29,12 @@ register_classes = (
     MMTPathOperator,
     MMTPanel,
 
-    #
     Import3DMigotoFrameAnalysis,
     Import3DMigotoRaw,
     Import3DMigotoReferenceInputFormat,
     Export3DMigoto,
 
-    # mesh_operator
+    # mesh_operator 右键菜单栏
     RemoveUnusedVertexGroupOperator,
     MergeVertexGroupsWithSameNumber,
     FillVertexGroupGaps,
@@ -48,12 +48,11 @@ register_classes = (
     MMTShowIndexedVertices,
     MMTSetAutoSmooth89,
 
-
     # MMT的一键导入导出
     MMTImportAllTextModel,
     MMTExportAllIBVBModel,
 
-    # 动画Mod支持
+    # MMD类型动画Mod支持
     MMDModIniGenerator
 )
 

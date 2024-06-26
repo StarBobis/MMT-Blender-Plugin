@@ -5,6 +5,7 @@ from .migoto_format import *
 
 
 def remove_unused_vertex_group(self, context):
+    # Copy from https://blenderartists.org/t/batch-delete-vertex-groups-script/449881/23
     for obj in bpy.context.selected_objects:
         if obj.type == "MESH":
             # obj = bpy.context.active_object
