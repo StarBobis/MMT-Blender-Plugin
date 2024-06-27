@@ -877,36 +877,33 @@ def import_3dmigoto(operator, context, paths, **kwargs):
 
 # Nico: 从GIMI抄过来的，由于我们并不会移动贴图文件到文件夹中，所以这里仅供参考，后续要找到更好的解决方案
 # 后续可以集成贴图类型自动识别，外加大小槽位等等，在MMT中生成具体的贴图槽位和类型，和Blender插件联动来实现一键导入
-def create_material_with_texture(obj, mesh_name, directory, debug=False):
+def create_material_with_texture(obj, mesh_name, directory):
+    # Изменим имя текстуры, чтобы оно точно совпадало с шаблоном (Change the texture name to match the template exactly)
     material_name = f"{mesh_name}_Material"
-    texture_name = f"{mesh_name}Diffuse.png"  # Изменим имя текстуры, чтобы оно точно совпадало с шаблоном (Change the texture name to match the template exactly)
+    texture_name = f"{mesh_name}-DiffuseMap.jpg"
 
     # Создание нового материала (Create new materials)
     material = bpy.data.materials.new(name=material_name)
     material.use_nodes = True
-    bsdf = material.node_tree.nodes["Principled BSDF"]
-    if debug:
-        print(f"Создан материал (Create materials): {material_name}")
 
-    # Поиск текстуры (Search for textures)
-    texture_path = find_texture(texture_name, directory, debug)
-    if texture_path:
-        tex_image = material.node_tree.nodes.new('ShaderNodeTexImage')
-        tex_image.image = bpy.data.images.load(texture_path)
-        material.node_tree.links.new(bsdf.inputs['Base Color'], tex_image.outputs['Color'])
-        if debug:
-            print(f"Текстура найдена и применена (Find and apply textures): {texture_path}")
-    else:
-        if debug:
-            print(f"Текстура не найдена (Unable to find texture): {texture_name}")
+    # Nico: Currently only support EN and ZH-CN
+    bsdf = material.node_tree.nodes.get("原理化BSDF")
+    if not bsdf:
+        bsdf = material.node_tree.nodes.get("Principled BSDF")
 
-    # Применение материала к мешу (Materials applied to bags)
-    if obj.data.materials:
-        obj.data.materials[0] = material
-    else:
-        obj.data.materials.append(material)
-    if debug:
-        print(f"Материал применен к мешу (Materials suitable for bags): {obj.name}")
+    if bsdf:
+        # Поиск текстуры (Search for textures)
+        texture_path = find_texture(texture_name, directory, False)
+        if texture_path:
+            tex_image = material.node_tree.nodes.new('ShaderNodeTexImage')
+            tex_image.image = bpy.data.images.load(texture_path)
+            material.node_tree.links.new(bsdf.inputs['Base Color'], tex_image.outputs['Color'])
+
+        # Применение материала к мешу (Materials applied to bags)
+        if obj.data.materials:
+            obj.data.materials[0] = material
+        else:
+            obj.data.materials.append(material)
 
 
 def find_texture(texture_name, directory, debug=False):
@@ -929,15 +926,6 @@ def find_texture(texture_name, directory, debug=False):
 
 
 def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_forward='-Z', axis_up='Y'):
-    # --------------------------------------------------------------
-    # TODO 移除从控制台输出内容的想法，太拉了
-    # TODO 默认我们不打开Debug，这个最终是否需要仍然需要测试决定，暂时先抄过来
-    debug = False
-    # Открыть консоль для вывода отладочных сообщений (打开控制台输出调试信息)
-    if debug:
-        bpy.ops.wm.console_toggle()
-    # --------------------------------------------------------------
-
     vb, ib, name = load_3dmigoto_mesh(operator, paths)
 
     mesh = bpy.data.meshes.new(name)
@@ -1002,27 +990,15 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     bm.to_mesh(mesh)
     bm.free()
 
-    # 设置导入时的顶点数和索引数
+    # 设置导入时的顶点数和索引数，用于插件右键对比是否和原本顶点数量一致
     obj['3DMigoto:OriginalVertexNumber'] = len(mesh.vertices)
     obj['3DMigoto:OriginalIndicesNumber'] = len(mesh.loops)
 
     # ----------------------------------------------------------------------------------------------------------------------------
     # Nico: 下面是由rayvy提议的添加贴图自动导入支持，需要大量测试如何以优雅的方式和MMT结合在一起
-    # Убедимся, что paths[0] является строкой (确保paths[0]是一个字符串)
-    if debug:
-        print(f"Paths: {paths}")
-        print(f"Paths[0]: {paths[0]} (type: {type(paths[0])})")
-
-    # Проверим, что paths[0] это строка, и преобразуем в строку, если необходимо (检查paths[0]是否是字符串，如果需要，将其转换为字符串。)
-    path_str = paths[0] if isinstance(paths[0], str) else paths[0][0]
-    if debug:
-        print(f"Using path: {path_str}")
-
-    # Исправим формирование имени текстуры (修复纹理名称的形成)
-    # TODO 这里的splittext会直接报错: TypeError: expected str, bytes or os.PathLike object, not tuple
-    # base_name = os.path.splitext(os.path.basename(path_str))[0]
-    # material_name = base_name.split('-')[0]  # Получаем основу имени без лишних частей
-    # create_material_with_texture(obj, material_name, os.path.dirname(path_str), debug)
+    mesh_prefix: str = str(mesh.name).split(".")[0]
+    # operator.report({'INFO'}, mesh_prefix)
+    create_material_with_texture(obj, mesh_prefix, os.path.dirname(paths[0][0][0]))
     return obj
 
 
