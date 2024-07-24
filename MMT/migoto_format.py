@@ -1191,14 +1191,14 @@ def export_3dmigoto(operator, context, vb_path, ib_path, fmt_path):
                 这样就能得到每个Position对应的平均切线，在切线值相同的情况下，就不会产生额外的多余顶点了。
                 这里我选择简单的使用这个顶点第一次出现的TANGENT作为它的TANGENT，以此避免产生额外多余顶点的问题，后续可以优化为使用平均值作为TANGENT
             '''
-            if "POSITION" in vertex and "NORMAL" in vertex and "TANGENT" in vertex and "BLENDINDICES" in vertex and "TEXCOORD" in vertex:
-                if tuple(vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDINDICES"] + vertex["TEXCOORD"]  ) in unique_position_vertices:
-                    tangent_var = unique_position_vertices[tuple(vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDINDICES"] + vertex["TEXCOORD"] )]
-                    vertex["TANGENT"] = tangent_var
-                else:
-                    tangent_var = vertex["TANGENT"]
-                    unique_position_vertices[tuple(vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDINDICES"] + vertex["TEXCOORD"] )] = tangent_var
-                    vertex["TANGENT"] = tangent_var
+            # if "POSITION" in vertex and "NORMAL" in vertex and "TANGENT" in vertex and "BLENDINDICES" in vertex and "TEXCOORD" in vertex:
+            #     if tuple(vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDINDICES"] + vertex["TEXCOORD"]  ) in unique_position_vertices:
+            #         tangent_var = unique_position_vertices[tuple(vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDINDICES"] + vertex["TEXCOORD"] )]
+            #         vertex["TANGENT"] = tangent_var
+            #     else:
+            #         tangent_var = vertex["TANGENT"]
+            #         unique_position_vertices[tuple(vertex["POSITION"] + vertex["NORMAL"] + vertex["BLENDINDICES"] + vertex["TEXCOORD"] )] = tangent_var
+            #         vertex["TANGENT"] = tangent_var
 
             indexed_vertex = indexed_vertices.setdefault(HashableVertex(vertex), len(indexed_vertices))
             face.append(indexed_vertex)
