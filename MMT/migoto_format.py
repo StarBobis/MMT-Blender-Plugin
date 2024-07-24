@@ -1,4 +1,6 @@
 # This migoto_format.py is only used in 3dmigoto import and export options.
+import os.path
+
 from .panel import *
 
 # 这里使用type关键字创建了一个类，类名是DummyIOOBJOrientationHelper，(object,)表示继承自object对象，{}表示没定义属性和方法
@@ -882,6 +884,9 @@ def create_material_with_texture(obj, mesh_name, directory):
     material_name = f"{mesh_name}_Material"
     texture_name = f"{mesh_name}-DiffuseMap.jpg"
 
+    texture_prefix = str(mesh_name).split("-")[0] # Hash值
+    texture_suffix = "-DiffuseMap.jpg"
+
     # Создание нового материала (Create new materials)
     material = bpy.data.materials.new(name=material_name)
     material.use_nodes = True
@@ -893,7 +898,7 @@ def create_material_with_texture(obj, mesh_name, directory):
 
     if bsdf:
         # Поиск текстуры (Search for textures)
-        texture_path = find_texture(texture_name, directory, False)
+        texture_path = find_texture(texture_prefix, texture_suffix, directory)
         if texture_path:
             tex_image = material.node_tree.nodes.new('ShaderNodeTexImage')
             tex_image.image = bpy.data.images.load(texture_path)
@@ -906,22 +911,12 @@ def create_material_with_texture(obj, mesh_name, directory):
             obj.data.materials.append(material)
 
 
-def find_texture(texture_name, directory, debug=False):
-    if debug:
-        print(f"Ищем текстуру (Searching for textures): {texture_name} в директории (catalogue): {directory}")
+def find_texture(texture_prefix, texture_suffix, directory):
     for root, dirs, files in os.walk(directory):
-        if debug:
-            print(f"Проверяем директорию (check directories): {root}")
         for file in files:
-            if debug:
-                print(f"Найден файл (file found): {file}")
-            if file.endswith(texture_name):
+            if file.endswith(texture_suffix) and file.startswith(texture_prefix):
                 texture_path = os.path.join(root, file)
-                if debug:
-                    print(f"Найдена текстура (Find texture): {texture_path}")
                 return texture_path
-    if debug:
-        print(f"Текстура не найдена (Unable to find texture): {texture_name}")
     return None
 
 
@@ -981,10 +976,10 @@ def import_3dmigoto_vb_ib(operator, context, paths, flip_texcoord_v=True, axis_f
     bm.from_mesh(mesh)
 
     # 删除松散点 delete loose before get this
-    bm.verts.ensure_lookup_table()
-    for v in bm.verts:
-        if not v.link_faces:
-            bm.verts.remove(v)
+    # bm.verts.ensure_lookup_table()
+    # for v in bm.verts:
+    #     if not v.link_faces:
+    #         bm.verts.remove(v)
 
     # 将 BMesh 更新回原始网格
     bm.to_mesh(mesh)
@@ -1410,7 +1405,9 @@ class Import3DMigotoRaw(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper
         migoto_raw_import_options = self.as_keywords(ignore=('filepath', 'files', 'filter_glob'))
 
         # 我们需要添加到一个新建的集合里，方便后续操作
-        collection = bpy.data.collections.new("MMT-Import")
+        # 这里集合的名称需要为当前文件夹的名称
+        collection_name = os.path.basename(os.path.dirname(self.filepath))
+        collection = bpy.data.collections.new(collection_name)
         bpy.context.scene.collection.children.link(collection)
 
         done = set()

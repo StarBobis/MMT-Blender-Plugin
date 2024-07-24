@@ -26,7 +26,7 @@ def remove_unused_vertex_group(self, context):
 
 class RemoveUnusedVertexGroupOperator(bpy.types.Operator):
     bl_idname = "object.remove_unused_vertex_group"
-    bl_label = "Remove Unused Vertex Group"
+    bl_label = "移除未使用的空顶点组"
 
     def execute(self, context):
         return remove_unused_vertex_group(self, context)
@@ -109,7 +109,7 @@ def merge_vertex_group_with_same_number(self, context):
 
 class MergeVertexGroupsWithSameNumber(bpy.types.Operator):
     bl_idname = "object.merge_vertex_group_with_same_number"
-    bl_label = "Merge Vertex Groups"
+    bl_label = "合并具有相同数字前缀名称的顶点组"
 
     def execute(self, context):
         return merge_vertex_group_with_same_number(self, context)
@@ -147,7 +147,7 @@ def fill_vertex_group_gaps(self, context):
 
 class FillVertexGroupGaps(bpy.types.Operator):
     bl_idname = "object.fill_vertex_group_gaps"
-    bl_label = "Fill Vertex Group Gaps"
+    bl_label = "填充数字顶点组的间隙"
 
     def execute(self, context):
         return fill_vertex_group_gaps(self, context)
@@ -199,7 +199,7 @@ def add_bone_from_vertex_group(self, context):
 
 class AddBoneFromVertexGroup(bpy.types.Operator):
     bl_idname = "object.add_bone_from_vertex_group"
-    bl_label = "Add Bone From Vertex Group"
+    bl_label = "根据顶点组自动生成骨骼"
 
     def execute(self, context):
         return add_bone_from_vertex_group(self, context)
@@ -217,7 +217,7 @@ def remove_not_number_vertex_group(self, context):
 
 class RemoveNotNumberVertexGroup(bpy.types.Operator):
     bl_idname = "object.remove_not_number_vertex_group"
-    bl_label = "Remove Not Number Vertex Group"
+    bl_label = "移除非数字名称的顶点组"
 
     def execute(self, context):
         return remove_not_number_vertex_group(self, context)
@@ -286,7 +286,7 @@ def convert_to_fragment(self, context):
 
 class ConvertToFragmentOperator(bpy.types.Operator):
     bl_idname = "object.convert_to_fragment"
-    bl_label = "Convert To Fragment"
+    bl_label = "转换为一个3Dmigoto碎片用于合并"
 
     def execute(self, context):
         return convert_to_fragment(self, context)
@@ -311,7 +311,7 @@ def delete_loose(self, context):
 
 class MMTDeleteLoose(bpy.types.Operator):
     bl_idname = "object.mmt_delete_loose"
-    bl_label = "Delete Mesh's Loose Vertex"
+    bl_label = "删除物体的松散点"
 
     def execute(self, context):
         return delete_loose(self, context)
@@ -333,7 +333,7 @@ def mmt_reset_rotation(self, context):
 
 class MMTResetRotation(bpy.types.Operator):
     bl_idname = "object.mmt_reset_rotation"
-    bl_label = "Reset x,y,z rotation number to 0 (UE Model)"
+    bl_label = "重置x,y,z的旋转角度为0 (UE Model)"
 
     def execute(self, context):
         return mmt_reset_rotation(self, context)
@@ -350,7 +350,7 @@ def mmt_cancel_auto_smooth(self, context):
 
 class MMTCancelAutoSmooth(bpy.types.Operator):
     bl_idname = "object.mmt_cancel_auto_smooth"
-    bl_label = "Cancel Auto Smooth for NORMAL (UE Model)"
+    bl_label = "取消自动平滑 (UE Model)"
 
     def execute(self, context):
         return mmt_cancel_auto_smooth(self, context)
@@ -369,7 +369,7 @@ def mmt_set_auto_smooth_89(self, context):
 
 class MMTSetAutoSmooth89(bpy.types.Operator):
     bl_idname = "object.mmt_set_auto_smooth_89"
-    bl_label = "Set Auto Smooth to 89° (Unity)"
+    bl_label = "设置Normal的自动平滑为89° (Unity)"
 
     def execute(self, context):
         return mmt_set_auto_smooth_89(self, context)
@@ -432,10 +432,67 @@ def show_indexed_vertices(self, context):
 
 class MMTShowIndexedVertices(bpy.types.Operator):
     bl_idname = "object.mmt_show_indexed_vertices"
-    bl_label = "Show Indexed Vertices and Indexes Number"
+    bl_label = "展示Indexed Vertices和Indexes Number"
 
     def execute(self, context):
         return show_indexed_vertices(self, context)
+
+
+def split_mesh_by_common_vertex_group(self, context):
+    for obj in bpy.context.selected_objects:
+        origin_name = obj.name
+        keys = obj.vertex_groups.keys()
+        real_keys = []
+        for gr in keys:
+            bpy.ops.object.mode_set(mode="EDIT")
+            # Set the vertex group as active
+            obj.vertex_groups.active_index = obj.vertex_groups[gr].index
+
+            # Deselect all verts and select only current VG
+            bpy.ops.mesh.select_all(action='DESELECT')
+            bpy.ops.object.vertex_group_select()
+
+            try:
+                bpy.ops.mesh.separate(type="SELECTED")
+                real_keys.append(gr)
+            except:
+                pass
+
+        for i in range(1, len(real_keys) + 1):
+            new_obj = bpy.data.objects['{}.{:03d}'.format(origin_name, i)]
+            new_obj.name = '{}.{}'.format(origin_name, real_keys[i - 1])
+    # for obj in bpy.context.selected_objects:
+    #     origin_name = obj.name
+    #     keys = obj.vertex_groups.keys()
+    #     real_keys = []
+    #     for gr in keys:
+    #         bpy.ops.object.mode_set(mode="EDIT")
+    #         # Set the vertex group as active
+    #         bpy.ops.object.vertex_group_set_active(group=gr)
+    #
+    #         # Deselect all verts and select only current VG
+    #         bpy.ops.mesh.select_all(action='DESELECT')
+    #         bpy.ops.object.vertex_group_select()
+    #         # bpy.ops.mesh.select_all(action='INVERT')
+    #         try:
+    #             bpy.ops.mesh.separate(type="SELECTED")
+    #             real_keys.append(gr)
+    #         except:
+    #             pass
+    #     for i in range(1, len(real_keys) + 1):
+    #         bpy.data.objects['{}.{:03d}'.format(origin_name, i)].name = '{}.{}'.format(
+    #             origin_name, real_keys[i - 1])
+
+    return {'FINISHED'}
+
+
+class SplitMeshByCommonVertexGroup(bpy.types.Operator):
+    bl_idname = "object.split_mesh_by_common_vertex_group"
+    bl_label = "根据相同的顶点组分割物体"
+
+    def execute(self, context):
+        return split_mesh_by_common_vertex_group(self, context)
+
 
 
 # -----------------------------------这个属于右键菜单注册，单独的函数要往上面放---------------------------------------
@@ -456,6 +513,7 @@ class MigotoRightClickMenu(bpy.types.Menu):
         layout.operator("object.mmt_cancel_auto_smooth")
         layout.operator("object.mmt_set_auto_smooth_89")
         layout.operator("object.mmt_show_indexed_vertices")
+        layout.operator("object.split_mesh_by_common_vertex_group")
 
 
 # 定义菜单项的注册函数
@@ -486,6 +544,7 @@ class MMTImportAllTextModel(bpy.types.Operator):
 
         output_folder_path = mmt_path + "Games\\" + current_game + "\\3Dmigoto\\Mods\\output\\"
 
+        # 这里是根据Config.json中的DrawIB来决定导入时导入具体哪个IB
         import_folder_path_list = []
         for ib_config in game_config_json:
             draw_ib = ib_config["DrawIB"]
@@ -514,6 +573,10 @@ class MMTImportAllTextModel(bpy.types.Operator):
             # 使用 glob.glob 获取匹配的文件列表
             txt_file_list = glob(file_pattern)
             for txt_file_path in txt_file_list:
+                # 如果文件名不包含-则属于我们自动导出的文件名，则不计入统计
+                if os.path.basename(txt_file_path).find("-") == -1:
+                    continue
+
                 # self.report({'INFO'}, "txt file: " + txt_file_path)
                 txt_file_splits = os.path.basename(txt_file_path).split("-")
                 ib_file_name = txt_file_splits[0] + "-" + txt_file_splits[1]
@@ -582,9 +645,11 @@ class MMTExportAllIBVBModel(bpy.types.Operator):
         selected_collection = bpy.context.collection
 
         # 遍历选中的对象
+        export_time = 0
         for obj in selected_collection.objects:
             # 判断对象是否为网格对象
             if obj.type == 'MESH':
+                export_time = export_time + 1
                 bpy.context.view_layer.objects.active = obj
                 mesh = obj.data  # 获取网格数据
 
@@ -610,7 +675,9 @@ class MMTExportAllIBVBModel(bpy.types.Operator):
                 # FIXME: ExportHelper will check for overwriting vb_path, but not ib_path
 
                 export_3dmigoto(self, context, vb_path, ib_path, fmt_path)
-
-        self.report({'INFO'}, "Export Success!")
+        if export_time == 0:
+            self.report({'ERROR'}, "导出失败！请选择一个集合后再点一键导出！")
+        else:
+            self.report({'INFO'}, "一键导出成功！成功导出的部位数量：" + str(export_time))
         return {'FINISHED'}
 

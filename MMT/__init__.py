@@ -16,7 +16,7 @@ bl_info = {
     "original author": "DarkStarSword",
     "description": "Special fork version of DarkStarSword's blender_3dmigoto.py",
     "blender": (3, 6, 0),
-    "version": (1, 5, 3),
+    "version": (1, 5, 4),
     "location": "View3D",
     "warning": "",
     "category": "Generic"
@@ -47,6 +47,7 @@ register_classes = (
     MMTCancelAutoSmooth,
     MMTShowIndexedVertices,
     MMTSetAutoSmooth89,
+    SplitMeshByCommonVertexGroup,
 
     # MMT的一键导入导出
     MMTImportAllTextModel,
