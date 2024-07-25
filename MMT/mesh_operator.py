@@ -439,6 +439,9 @@ class MMTShowIndexedVertices(bpy.types.Operator):
 
 
 def split_mesh_by_common_vertex_group(self, context):
+    # Code copied and modified from @Kail_Nethunter, very useful in some special meets.
+    # https://blenderartists.org/t/split-a-mesh-by-vertex-groups/438990/11
+
     for obj in bpy.context.selected_objects:
         origin_name = obj.name
         keys = obj.vertex_groups.keys()
@@ -446,42 +449,20 @@ def split_mesh_by_common_vertex_group(self, context):
         for gr in keys:
             bpy.ops.object.mode_set(mode="EDIT")
             # Set the vertex group as active
-            obj.vertex_groups.active_index = obj.vertex_groups[gr].index
+            bpy.ops.object.vertex_group_set_active(group=gr)
 
             # Deselect all verts and select only current VG
             bpy.ops.mesh.select_all(action='DESELECT')
             bpy.ops.object.vertex_group_select()
-
+            # bpy.ops.mesh.select_all(action='INVERT')
             try:
                 bpy.ops.mesh.separate(type="SELECTED")
                 real_keys.append(gr)
             except:
                 pass
-
         for i in range(1, len(real_keys) + 1):
-            new_obj = bpy.data.objects['{}.{:03d}'.format(origin_name, i)]
-            new_obj.name = '{}.{}'.format(origin_name, real_keys[i - 1])
-    # for obj in bpy.context.selected_objects:
-    #     origin_name = obj.name
-    #     keys = obj.vertex_groups.keys()
-    #     real_keys = []
-    #     for gr in keys:
-    #         bpy.ops.object.mode_set(mode="EDIT")
-    #         # Set the vertex group as active
-    #         bpy.ops.object.vertex_group_set_active(group=gr)
-    #
-    #         # Deselect all verts and select only current VG
-    #         bpy.ops.mesh.select_all(action='DESELECT')
-    #         bpy.ops.object.vertex_group_select()
-    #         # bpy.ops.mesh.select_all(action='INVERT')
-    #         try:
-    #             bpy.ops.mesh.separate(type="SELECTED")
-    #             real_keys.append(gr)
-    #         except:
-    #             pass
-    #     for i in range(1, len(real_keys) + 1):
-    #         bpy.data.objects['{}.{:03d}'.format(origin_name, i)].name = '{}.{}'.format(
-    #             origin_name, real_keys[i - 1])
+            bpy.data.objects['{}.{:03d}'.format(origin_name, i)].name = '{}.{}'.format(
+                origin_name, real_keys[i - 1])
 
     return {'FINISHED'}
 
