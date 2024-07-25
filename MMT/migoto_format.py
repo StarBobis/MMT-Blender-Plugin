@@ -884,8 +884,9 @@ def create_material_with_texture(obj, mesh_name, directory):
     material_name = f"{mesh_name}_Material"
     texture_name = f"{mesh_name}-DiffuseMap.jpg"
 
-    texture_prefix = str(mesh_name).split("-")[0] # Hash值
-    texture_suffix = "-DiffuseMap.jpg"
+    real_mesh_name = str(mesh_name).split(".")[0]
+    texture_prefix, part_name = real_mesh_name.split("-") # IB Hash 和 PartName
+    texture_suffix = f"{part_name}-DiffuseMap.jpg"
 
     # Создание нового материала (Create new materials)
     material = bpy.data.materials.new(name=material_name)
