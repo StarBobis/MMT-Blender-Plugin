@@ -100,7 +100,7 @@ class MMTPanel(bpy.types.Panel):
 
         row = layout.row()
         # 在这里添加你的侧边栏内容
-        row.label(text="版本：V1.5.4")
+        row.label(text="版本：V1.5.5")
 
         row.operator("wm.url_open", text="检查更新", icon='URL').url = "https://github.com/StarBobis/MMT-Blender-Plugin"
         props = context.scene.mmt_props
