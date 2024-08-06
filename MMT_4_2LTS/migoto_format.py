@@ -876,20 +876,30 @@ def import_3dmigoto(operator, context, paths, **kwargs):
     return obj
 
 
-
-# Nico: 从GIMI抄过来的，由于我们并不会移动贴图文件到文件夹中，所以这里仅供参考，后续要找到更好的解决方案
-# 后续可以集成贴图类型自动识别，外加大小槽位等等，在MMT中生成具体的贴图槽位和类型，和Blender插件联动来实现一键导入
 def create_material_with_texture(obj, mesh_name, directory):
     # Изменим имя текстуры, чтобы оно точно совпадало с шаблоном (Change the texture name to match the template exactly)
     material_name = f"{mesh_name}_Material"
-    texture_name = f"{mesh_name}-DiffuseMap.jpg"
+    # texture_name = f"{mesh_name}-DiffuseMap.jpg"
 
     mesh_name_split = str(mesh_name).split(".")[0].split("-")
     texture_prefix = mesh_name_split[0] # IB Hash
     if len(mesh_name_split) > 1:
-        texture_suffix = f"{mesh_name_split[1]}-DiffuseMap.jpg" # Part Name
+        texture_suffix = f"{mesh_name_split[1]}-DiffuseMap.tga" # Part Name
     else:
-        texture_suffix = "-DiffuseMap.jpg"
+        texture_suffix = "-DiffuseMap.tga"
+
+    # 查找是否存在满足条件的转换好的tga贴图文件
+    texture_path = find_texture(texture_prefix, texture_suffix, directory)
+
+    # 如果不存在，试试查找jpg文件
+    if texture_path is None:
+        if len(mesh_name_split) > 1:
+            texture_suffix = f"{mesh_name_split[1]}-DiffuseMap.jpg"  # Part Name
+        else:
+            texture_suffix = "-DiffuseMap.jpg"
+
+        # 查找jpg文件，如果这里没找到的话后面也是正常的，但是这里如果找到了就能起到兼容旧版本jpg文件的作用
+        texture_path = find_texture(texture_prefix, texture_suffix, directory)
 
     # Создание нового материала (Create new materials)
     material = bpy.data.materials.new(name=material_name)
@@ -902,7 +912,7 @@ def create_material_with_texture(obj, mesh_name, directory):
 
     if bsdf:
         # Поиск текстуры (Search for textures)
-        texture_path = find_texture(texture_prefix, texture_suffix, directory)
+
         if texture_path:
             tex_image = material.node_tree.nodes.new('ShaderNodeTexImage')
             tex_image.image = bpy.data.images.load(texture_path)
