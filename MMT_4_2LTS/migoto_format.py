@@ -916,6 +916,10 @@ def create_material_with_texture(obj, mesh_name, directory):
         if texture_path:
             tex_image = material.node_tree.nodes.new('ShaderNodeTexImage')
             tex_image.image = bpy.data.images.load(texture_path)
+
+            # 因为tga格式贴图有alpha通道，所以必须用CHANNEL_PACKED才能显示正常颜色
+            tex_image.image.alpha_mode = "CHANNEL_PACKED"
+
             material.node_tree.links.new(bsdf.inputs['Base Color'], tex_image.outputs['Color'])
 
         # Применение материала к мешу (Materials applied to bags)
